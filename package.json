@@ -13,6 +13,7 @@
     "@e2b/code-interpreter": "^2.0.1",
     "@langchain/core": "^1.0.0-alpha.6",
     "@langchain/langgraph": "^1.0.0-alpha.5",
+    "diff": "^8.0.2",
     "dotenv": "^17.2.3"
   }
 }
