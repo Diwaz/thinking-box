@@ -1,28 +1,21 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
-import { StateGraph, START, END } from "@langchain/langgraph";
+import { StateGraph, START, END, Command } from "@langchain/langgraph";
 import { MessagesZodMeta } from "@langchain/langgraph";
 import { registry } from "@langchain/langgraph/zod";
 import { type BaseMessage } from "@langchain/core/messages";
 import { isAIMessage, ToolMessage } from "@langchain/core/messages";
 import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
+import { $ } from "bun";
+import {exec} from "child_process"
 
 
 const llm = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
-  maxOutputTokens: 2048
 });
 
-const add = tool(({ a, b }) => a + b, {
-  name: "add",
-  description: "add two numbers",
-  schema: z.object({
-    a: z.number().describe("First Number"),
-    b: z.z.number().describe("Second Number")
-  }),
-})
 
 const createfile = tool(
   async ({ filePath, content }) => {
@@ -33,14 +26,39 @@ const createfile = tool(
   name: "creates_new_file",
   description: "Creates new file and adds content to it",
   schema: z.object({
-    filePath: z.string(),
-    content: z.string()
+    filePath: z.string().describe("File path of the origin of the file"),
+    content: z.string().describe("content or code to put inside file")
   })
 })
 
+const runShellCommands = tool (
+  async ({ command }) => {
+    console.log("commdn",command);
+    exec(`${command}`, (error, stdout, stderr) => {
+    if (error) {
+        console.log(`error: ${error.message}`);
+        return;
+    }
+    if (stderr) {
+        console.log(`stderr: ${stderr}`);
+        return;
+    }
+    console.log(`stdout: ${stdout}`);
+});
+
+    return ` command executed in the terminal successfully `;
+  },{
+    name : "run_shell_command",
+    description:"runs the shell command given by AI in the terminal",
+    schema: z.object ({
+      command: z.string().describe("shell command to run in bash terminal")
+    })
+  }
+)
+
 const toolsByName = {
-  [add.name]: add,
-  [createfile.name]: createfile
+  [createfile.name]: createfile,
+  [runShellCommands.name]: runShellCommands
 };
 
 const tools = Object.values(toolsByName);
@@ -58,7 +76,7 @@ async function llmCall(state: State) {
 
   const llmResponse = await llmWithTools.invoke([
     new SystemMessage(
-      "You are a helpful assistant tasked with performing arithmetic on a set of inputs. when user ask to create a file dont ask for filename it will be given in the tools argument just use the tool"
+      "You are a helpful ai assistant that has wide experience in building web apps help user create robust and clean web app, ** remember always create a folder inside ai-projects folder which is inside root folder so do mkdir with prefix ai-projects/project-ID some random id then only create file inside that ** ** AND ALWAYS GIVE BACK THE LOCALHOST LINK TO THE USER IN RESPONSE AFTER RUNNING THE SHELL COMMAND HOSTING TO THE USER AND ALWAYS USE python3 -m http.server {PORT} always use python3 http-server since the projects are in plain html css and js **"
     ),
     ...state.messages
   ])
