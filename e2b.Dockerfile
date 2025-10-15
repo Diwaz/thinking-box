@@ -1,4 +1,10 @@
-# You can use most Debian-based base images
-FROM ubuntu:22.04
+FROM e2bdev/code-interpreter:latest 
 
-# Install dependencies and customize sandbox
+# Set working directory
+WORKDIR /home/user
+
+# Install Vite (React template) and TailwindCSS
+RUN npm create vite@5.2.1 . -- --template react && \
+    npm install
+
+RUN echo "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n  server: {\n    host: true, allowedHosts: true}\n})" > vite.config.js
