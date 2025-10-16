@@ -5,12 +5,22 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Plus, Paperclip, Globe, Lock, Mic, ArrowUp } from "lucide-react"
 import { useRouter } from "next/navigation"
-
-export function AIInput() {
+import { InitialPrompt } from "@/types/type"
+export function AIInput({type,initPrompt}:{type:string,initPrompt:InitialPrompt}) {
   const router = useRouter();
   const [value, setValue] = useState("")
   const [isPublic, setIsPublic] = useState(true)
 
+  const handleSubmit = (type:string) =>{
+    if (type === "initial"){
+                 const projectId = "asdasdd"
+                console.log("uuid",projectId)
+                initPrompt.prompt="create a simple todo app nothing fancy" 
+                router.push(`/project/${projectId}`)
+    }else{
+        console.log("handle secondary")
+    }
+  }
   return (
     <div className="w-full">
       <div
@@ -85,10 +95,8 @@ export function AIInput() {
               className="h-9 w-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               aria-label="Send"
               onClick={() => {
-                const projectId = "asdasdd"
-                console.log("uuid",projectId)
-                router.push(`/project/${projectId}`)
-              }}
+                handleSubmit(type);
+                 }}
             >
               <ArrowUp className="h-4 w-4" />
             </Button>
@@ -96,7 +104,7 @@ export function AIInput() {
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-muted-foreground">Design-only UI. Functionality coming soon.</p>
+      {/* <p className="mt-3 text-xs text-muted-foreground">Design-only UI. Functionality coming soon.</p> */}
     </div>
   )
 }

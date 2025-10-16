@@ -1,4 +1,5 @@
-import React from 'react'
+"use client";
+import React, { useEffect, useState } from 'react'
 import { Codesandbox } from 'lucide-react';
 import { Code,Globe,ChevronLeft,ChevronRight,LaptopMinimalCheck,ScreenShare,RotateCcw,Download,Ellipsis} from "lucide-react"
 
@@ -20,21 +21,45 @@ import {
   TabsTrigger,
 
 } from "@/components/ui/tabs"
+import { AIInput } from '@/components/ai-input';
+import handleRequest from '@/utils/request';
 
 function page() {
+  
+  const [response, setResponse] = useState("")
+
+  useEffect(()=>{
+    const options = {
+      body :{
+        prompt:"create a simple todo app nothing fancy"
+      }
+    }
+    const fetchData = async ()=>{
+      const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
+      setResponse(res.url);
+      console.log("ai resp",res.url)
+
+    }
+    fetchData();
+  },[])
+
   return (
     <div className='p-2'>
         <div className="navbar h-10 p-2 flex gap-2  ">
     <Codesandbox className='w-6 h-6'/>
     / Project-01
         </div>
-        <div className="chatWrapper  flex h-screen  ">
-            <div className="chatSection flex-[35%] ">chat</div>
+        <div className="chatWrapper  flex h-screen gap-2  ">
+            <div className="chatSection flex  flex-[35%] flex-col justify-end">
+                <div>
+                    <AIInput type="secondary"/>
+                </div>
+            </div>
             <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm ">
 
         <Tabs defaultValue="account">
 
-                <div className="navPreview h-12 border-b-1 p-2 flex items-center gap-10">
+                <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10">
          <TabsList>
           <TabsTrigger value="account">
             <Code/>
@@ -55,7 +80,7 @@ function page() {
                    <div>
                     <LaptopMinimalCheck className='w-3 h-3'/>
                     </div> 
-                   <div className='text-sm ml-0.5'>/ localhost:3000</div> 
+                   <div className='text-[10px] ml-0.5 lg:text-sm'>/ localhost:3000</div> 
                     </div>
                     <div className="sec2 flex items-center  gap-1">
 
@@ -77,8 +102,8 @@ function page() {
                    </div>
         </div>
                 <div className="iFrame">
-        <TabsContent value="account">
-          <Card>
+        <TabsContent value="account" >
+          <Card className='h-screen'>
             <CardHeader>
               <CardTitle>Account</CardTitle>
               <CardDescription>
@@ -102,27 +127,17 @@ function page() {
           </Card>
         </TabsContent>
         <TabsContent value="password">
-          <Card>
-            <CardHeader>
-              <CardTitle>Password</CardTitle>
-              <CardDescription>
-                Change your password here. After saving, you&apos;ll be logged
-                out.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6">
-              <div className="grid gap-3">
-                <Label htmlFor="tabs-demo-current">Current password</Label>
-                <Input id="tabs-demo-current" type="password" />
+          <Card className='h-screen'>
+         {/* {
+            response.length > 0  ?
+            (<iframe src={`https://${response}`} frameborder="0" width="100%" height="500px"></iframe>) : (
+              <div>
+                Loading...
               </div>
-              <div className="grid gap-3">
-                <Label htmlFor="tabs-demo-new">New password</Label>
-                <Input id="tabs-demo-new" type="password" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Save password</Button>
-            </CardFooter>
+            )
+          } */}
+
+            <iframe src={`https://${response}`}  width="100%" height="100%"></iframe>
           </Card>
         </TabsContent>
                 </div>

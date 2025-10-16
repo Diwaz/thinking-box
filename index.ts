@@ -12,6 +12,14 @@ import {exec} from "child_process"
 import { applyPatch, createPatch } from "diff";
 import { Sandbox } from '@e2b/code-interpreter'
 import { SYSTEM_PROMPT } from "./prompt";
+import express from 'express';
+import cors from 'cors';
+
+
+const app = express();
+
+app.use(express.json());
+app.use(cors());
 
 
 const llm = new ChatGoogleGenerativeAI({
@@ -191,35 +199,59 @@ const agent = new StateGraph(MessageState)
   .addEdge("toolNode", "llmCall")
   .compile();
 
-const start_agent = async () => {
-  let state:State = {
-    messages: [],
-    llmCalls:0,
-  }
-  while (true) {
-    let inputFromUser = prompt("[You]:")
+// const start_agent = async () => {
+//   let state:State = {
+//     messages: [],
+//     llmCalls:0,
+//   }
+//   while (true) {
+//     let inputFromUser = prompt("[You]:")
 
-    if (inputFromUser?.toLowerCase() === "quit"){
-      break;
-    }
-    if (!inputFromUser?.trim()){
-      continue
-    }
-    state.messages.push(new HumanMessage(inputFromUser))
-    const result = await agent.invoke(state)
-    state = result
+//     if (inputFromUser?.toLowerCase() === "quit"){
+//       break;
+//     }
+//     if (!inputFromUser?.trim()){
+//       continue
+//     }
+//     state.messages.push(new HumanMessage(inputFromUser))
+//     const result = await agent.invoke(state)
+//     state = result
 
-    for (const messages of state.messages) {
-      console.log(`[${messages._getType()}]:${messages.content}`);
+//     for (const messages of state.messages) {
+//       console.log(`[${messages._getType()}]:${messages.content}`);
 
-    }
-
-
-
-
-  }
+//     }
 
 
 
+
+//   }
+
+
+
+// }
+// start_agent();
+
+const state:State ={
+  messages:[],
+  llmCalls:0,
 }
-start_agent();
+
+app.post("/prompt",async (req,res)=>{
+  const {prompt} = req.body;
+  console.log("reached here w/ prompt",prompt)
+  state.messages.push(new HumanMessage(prompt))
+
+  const result = await agent.invoke(state)
+
+  res.status(200).json({
+   url:host,
+    mesage:result.messages,
+  })
+
+})
+
+
+app.listen(8080,()=>{
+  console.log("server started to listen")
+});
