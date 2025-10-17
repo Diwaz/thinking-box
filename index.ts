@@ -246,7 +246,7 @@ app.post("/prompt",async (req,res)=>{
 
   res.status(200).json({
    url:host,
-    mesage:result.messages,
+    messages:result.messages,
   })
 
 })

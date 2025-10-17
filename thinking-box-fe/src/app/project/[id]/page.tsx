@@ -24,40 +24,58 @@ import {
 import { AIInput } from '@/components/ai-input';
 import handleRequest from '@/utils/request';
 
-function page() {
+function WebBuilder() {
   
   const [response, setResponse] = useState("")
 
   useEffect(()=>{
     const options = {
       body :{
-        prompt:"create a simple todo app nothing fancy"
+        prompt:"design a landing page for a SaaS like this v0 or lovable where there is a beautiful modern landing page with animating gradient with the title of the webpage as thinking-box and place the some cool svg logo with the title at the navbar and for now there should be nothing but title at the navbar with cool modern glassmorphism navbar and in the hero section there should be a h1 bold title like Lets build future and some cool modern descritopn like v0 and lovable right now only design the landing page which this only things"
       }
     }
     const fetchData = async ()=>{
       const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
       setResponse(res.url);
       console.log("ai resp",res.url)
+      console.log("ai resp",res.message)
 
     }
     fetchData();
   },[])
 
   return (
-    <div className='p-2'>
-        <div className="navbar h-10 p-2 flex gap-2  ">
+    <div className='px-1'>
+        <div className="navbar h-10  flex gap-2 p-2  ">
     <Codesandbox className='w-6 h-6'/>
-    / Project-01
+    / Landing-Page
         </div>
-        <div className="chatWrapper  flex h-screen gap-2  ">
-            <div className="chatSection flex  flex-[35%] flex-col justify-end">
-                <div>
+        <div className="chatWrapper  flex h-[calc(100vh-40px)] gap-2  ">
+            <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end ">
+                  <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10 '>
+                    <div className="HumanMsg flex flex-row-reverse ">
+                      <div className="humanChatWrapper bg-[#1f1f1f] p-4 rounded-lg w-[80%]">
+                        
+                      <p className=''>
+design a homepage like this v0 or lovable where there is a beautiful modern landing page with animating gradient and just the landing ai-chatbot/input with the title of the webpage as thinking-box and place the some cool svg logo with the title at the navbar and for now there should be nothing but title at the navbar with cool modern glassmorphism navbar and in the hero section there should be a h1 bold title like Lets build future and some cool modern descritopn like v0 and lovable and then the ai-input chatbox right now only design the landing page which this only things
+                      </p>
+                      </div>
+                    </div>
+                    <div className="aiMsg  p-4 w-[80%]">
+                      <p>
+I set a focused 5-color palette (primary blue, accent teal, and three neutrals) and added a reusable animated gradient backdrop. The navbar uses glassmorphism with a custom SVG logo and the “thinking-box” title only, per your request. The hero includes the bold headline, a concise description, and a styled AI input box that’s design-only for now. You can later wire the input to an API; the UI is already responsive and accessible.
+                      </p>
+                    </div>
+                
+                 
+                    </div> 
+                <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]  '>
                     <AIInput type="secondary"/>
                 </div>
             </div>
-            <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm ">
+            <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm h-full  flex-col ">
 
-        <Tabs defaultValue="account">
+        <Tabs defaultValue="account" className='h-full'>
 
                 <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10">
          <TabsList>
@@ -101,9 +119,9 @@ function page() {
                     </div>
                    </div>
         </div>
-                <div className="iFrame">
+                <div className="iFrame  flex flex-1 flex-col">
         <TabsContent value="account" >
-          <Card className='h-screen'>
+          <div className='h-full '>
             <CardHeader>
               <CardTitle>Account</CardTitle>
               <CardDescription>
@@ -124,10 +142,10 @@ function page() {
             <CardFooter>
               <Button>Save changes</Button>
             </CardFooter>
-          </Card>
+          </div>
         </TabsContent>
         <TabsContent value="password">
-          <Card className='h-screen'>
+          <div className='h-full'>
          {/* {
             response.length > 0  ?
             (<iframe src={`https://${response}`} frameborder="0" width="100%" height="500px"></iframe>) : (
@@ -138,7 +156,7 @@ function page() {
           } */}
 
             <iframe src={`https://${response}`}  width="100%" height="100%"></iframe>
-          </Card>
+          </div>
         </TabsContent>
                 </div>
       </Tabs>
@@ -148,4 +166,4 @@ function page() {
   )
 }
 
-export default page
+export default WebBuilder;
