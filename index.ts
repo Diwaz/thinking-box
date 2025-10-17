@@ -14,6 +14,7 @@ import { Sandbox } from '@e2b/code-interpreter'
 import { SYSTEM_PROMPT } from "./prompt";
 import express from 'express';
 import cors from 'cors';
+import { WebSocket, WebSocketServer } from "ws";
 
 
 const app = express();
@@ -21,6 +22,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+interface ConversationHistory {
+  messages :[]
+}
 
 const llm = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash-lite",
@@ -238,7 +242,7 @@ const state:State ={
 }
 
 app.post("/prompt",async (req,res)=>{
-  const {prompt} = req.body;
+  const {prompt,projectId} = req.body;
   console.log("reached here w/ prompt",prompt)
   state.messages.push(new HumanMessage(prompt))
 
@@ -251,6 +255,22 @@ app.post("/prompt",async (req,res)=>{
 
 })
 
+const ws = new WebSocketServer({port:8585});
+ws.on('connection',(wss)=>{
+  console.log("user connected")
+wss.on('message',(data)=>{
+  console.log("data from ws",data.toString())
+  const response = JSON.parse(data.toString())
+  console.log("id",response.msg)
+  // const id = response.projectId;
+
+  // const context =ConvHistory.get(id)
+  // const resp = agent.invoke(context);
+
+  // wss.send(resp)
+})
+
+})
 
 app.listen(8080,()=>{
   console.log("server started to listen")

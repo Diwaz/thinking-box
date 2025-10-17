@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react'
 import { Codesandbox } from 'lucide-react';
 import { Code,Globe,ChevronLeft,ChevronRight,LaptopMinimalCheck,ScreenShare,RotateCcw,Download,Ellipsis} from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -23,22 +22,27 @@ import {
 } from "@/components/ui/tabs"
 import { AIInput } from '@/components/ai-input';
 import handleRequest from '@/utils/request';
+import dynamic from 'next/dynamic';
 
 function WebBuilder() {
   
   const [response, setResponse] = useState("")
+  const [initialPrompt, setInitialPrompt] = useState("design a landing page for a SaaS like this v0 or lovable where there is a beautiful modern landing page with animating gradient with the title of the webpage as thinking-box and place the some cool svg logo with the title at the navbar and for now there should be nothing but title at the navbar with cool modern glassmorphism navbar and in the hero section there should be a h1 bold title like Lets build future and some cool modern descritopn like v0 and lovable right now only design the landing page which this only things")
+  const [messages, setMessages] = useState([])
 
   useEffect(()=>{
     const options = {
       body :{
-        prompt:"design a landing page for a SaaS like this v0 or lovable where there is a beautiful modern landing page with animating gradient with the title of the webpage as thinking-box and place the some cool svg logo with the title at the navbar and for now there should be nothing but title at the navbar with cool modern glassmorphism navbar and in the hero section there should be a h1 bold title like Lets build future and some cool modern descritopn like v0 and lovable right now only design the landing page which this only things"
+        prompt:initialPrompt
       }
     }
     const fetchData = async ()=>{
       const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
       setResponse(res.url);
+      setMessages(res.messages);
       console.log("ai resp",res.url)
-      console.log("ai resp",res.message)
+      console.log("ai resp msg",res.messages[0].kwargs.id)
+      console.log("ai resp content",res.messages[0].kwargs.content)
 
     }
     fetchData();
@@ -53,19 +57,69 @@ function WebBuilder() {
         <div className="chatWrapper  flex h-[calc(100vh-40px)] gap-2  ">
             <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end ">
                   <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10 '>
-                    <div className="HumanMsg flex flex-row-reverse ">
+                    {/* <div className="HumanMsg flex flex-row-reverse ">
                       <div className="humanChatWrapper bg-[#1f1f1f] p-4 rounded-lg w-[80%]">
                         
-                      <p className=''>
-design a homepage like this v0 or lovable where there is a beautiful modern landing page with animating gradient and just the landing ai-chatbot/input with the title of the webpage as thinking-box and place the some cool svg logo with the title at the navbar and for now there should be nothing but title at the navbar with cool modern glassmorphism navbar and in the hero section there should be a h1 bold title like Lets build future and some cool modern descritopn like v0 and lovable and then the ai-input chatbox right now only design the landing page which this only things
-                      </p>
+                      <div className=''>
+                                {initialPrompt}
+                      </div>
+                      </div>
+                    </div> */}
+                    {messages.length > 0 ? (
+                    <div className="aiMsg  ">
+                    {/* <div className="aiMsg  p-4 w-[80%]"> */}
+                      
+                      
+                     {
+  messages.map((item, i) => {
+    const content = item?.kwargs?.content;
+
+    const isAI = item?.kwargs;
+    // console.log("checking",checking)
+    return Array.isArray(content) ? (
+      <div key={i}>
+        {content.map((subItem, idx) => (
+          <div key={idx}>
+            Ai msg for tool calls
+          </div>
+          // <div key={`${i}-${idx}`}> {subItem?.text}</div>
+        ))}
+      </div>
+    ) : typeof content === "object" && content !== null ? (
+        // here it uses tool calling 
+      <div key={i}>
+        Using tools {content?.kwargs?.content ?? JSON.stringify(content)}
+      </div>
+    ) : (
+      <div key={i}>
+        {Object.hasOwn(isAI,'tool_calls') ? (
+          <div>
+
+          </div>
+        ):(
+          <div>
+  <div className="HumanMsg flex flex-row-reverse w-full">
+                      <div className="humanChatWrapper bg-[#1f1f1f] p-4 rounded-lg w-[80%]">
+                        
+                      <div className=''>
+                                {content?.text ?? content ?? "No content"}
+                      </div>
                       </div>
                     </div>
-                    <div className="aiMsg  p-4 w-[80%]">
-                      <p>
-I set a focused 5-color palette (primary blue, accent teal, and three neutrals) and added a reusable animated gradient backdrop. The navbar uses glassmorphism with a custom SVG logo and the “thinking-box” title only, per your request. The hero includes the bold headline, a concise description, and a styled AI input box that’s design-only for now. You can later wire the input to an API; the UI is already responsive and accessible.
-                      </p>
+          </div>
+        )}
+        {/* {content?.text ?? content ?? "No content"} */}
+      </div>
+    );
+  })
+}
+
+                      
                     </div>
+                    ):(
+                      <div>nothing to see</div>
+                    )}
+
                 
                  
                     </div> 
@@ -146,16 +200,16 @@ I set a focused 5-color palette (primary blue, accent teal, and three neutrals) 
         </TabsContent>
         <TabsContent value="password">
           <div className='h-full'>
-         {/* {
+         {
             response.length > 0  ?
-            (<iframe src={`https://${response}`} frameborder="0" width="100%" height="500px"></iframe>) : (
+            (<iframe src={`https://${response}`} frameborder="0" width="100%" height="100%"></iframe>) : (
               <div>
                 Loading...
               </div>
             )
-          } */}
+          }
 
-            <iframe src={`https://${response}`}  width="100%" height="100%"></iframe>
+            {/* <iframe src={`https://${response}`}  width="100%" height="100%"></iframe> */}
           </div>
         </TabsContent>
                 </div>
@@ -166,4 +220,5 @@ I set a focused 5-color palette (primary blue, accent teal, and three neutrals) 
   )
 }
 
-export default WebBuilder;
+// export default WebBuilder;
+export default dynamic(() => Promise.resolve(WebBuilder), { ssr: false });
