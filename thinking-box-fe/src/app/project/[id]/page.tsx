@@ -23,7 +23,6 @@ import {
 import { AIInput } from '@/components/ai-input';
 import handleRequest from '@/utils/request';
 import dynamic from 'next/dynamic';
-import {createRoot} from 'react-dom/client'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -38,26 +37,41 @@ function WebBuilder({params}) {
   const [messages, setMessages] = useState([])
 
   useEffect(()=>{
-    
+   
+    const ws = new WebSocket(`ws://localhost:8080/?userId=a770b0b5-2bdc-49e3-9795-f887703803fa`)
+
+    ws.onmessage = (e) => {
+      console.log("user connected")
+      const data = JSON.parse(e.data);
+      console.log("msg from socket",data.message)
+      setMessages(prev => [...prev,data.message]);
+
+    }
+
     const fetchData = async ()=>{
       const projectData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/${id}`)
       console.log("initial prompt from server",projectData)
       setInitialPrompt(projectData.initialPrompt);
 
-      if(projectData.conversationHistory.length < 1){
+      // if(projectData.conversationHistory.length > 0){
         console.log("hello no conv history")
       const options = {
       body :{
-        prompt: projectData.initialPrompt
+        prompt: projectData.initialPrompt,
+        projectId:id,
+        userId:'a770b0b5-2bdc-49e3-9795-f887703803fa'
       }
         }
       const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
+      console.log("res from pes",res)
       setResponse(res.url);
-      setMessages(res.messages);
-      }
-
+      // setMessages(res.messages);
+      // }
+      
     }
     fetchData();
+
+    return () => ws.close();
   },[])
 
   return (
@@ -82,9 +96,9 @@ function WebBuilder({params}) {
                     {/* <div className="aiMsg  p-4 w-[80%]"> */}
                      {
   messages.map((item, i) => {
-    const content = item?.kwargs?.content;
+    const content = item;
 
-    const isAI = item?.kwargs;
+    const isAI = item;
     // console.log("checking",checking)
     return Array.isArray(content) ? (
       <div key={i}>
@@ -139,7 +153,7 @@ function WebBuilder({params}) {
                  
                     </div> 
                 <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]  '>
-                    <AIInput type="secondary"/>
+                    <AIInput type="secondary" projectId={id} userId={'a770b0b5-2bdc-49e3-9795-f887703803fa'}/>
                 </div>
             </div>
             <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm h-full  flex-col ">
@@ -215,14 +229,14 @@ function WebBuilder({params}) {
         </TabsContent>
         <TabsContent value="password">
           <div className='h-full'>
-         {
+         {/* {
             response.length > 0  ?
-            (<iframe src={`https://${response}`} frameborder="0" width="100%" height="100%"></iframe>) : (
+                        (<iframe src={`https://${response}`} frameborder="0" width="100%" height="100%"></iframe>) : (
               <div>
                 Loading...
               </div>
             )
-          }
+          } */}
 
             {/* <iframe src={`https://${response}`}  width="100%" height="100%"></iframe> */}
           </div>

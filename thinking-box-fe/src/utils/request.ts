@@ -17,7 +17,7 @@ const handleRequest = async (method:Method,url:string,options?:RequestOption) =>
       url,
       headers: {
         "Content-Type": "application/json",
-        ...(options?.headers || {}),
+        // ...(options?.headers || {}),
       },
       ...(method === "POST" && { data: options?.body }),
     };

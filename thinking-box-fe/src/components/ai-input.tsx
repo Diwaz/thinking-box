@@ -7,7 +7,7 @@ import { Plus, Paperclip, Globe, Lock, Mic, ArrowUp } from "lucide-react"
 import { useRouter } from "next/navigation"
 import handleRequest from "@/utils/request"
 
-export function AIInput({type}:{type:string}) {
+export function AIInput({type,projectId,userId}:{type:string,projectId?:string,userId?:string}) {
   const router = useRouter();
   const [value, setValue] = useState("")
   const [isPublic, setIsPublic] = useState(true)
@@ -29,6 +29,7 @@ export function AIInput({type}:{type:string}) {
                 router.push(`/project/${projectId}`)
     }else{
         console.log("handle secondary")
+
     }
   }
   return (
