@@ -8,18 +8,18 @@ interface RequestOption {
 }
 type Method = "GET" | "POST";
 
-const handleRequest = async (method:Method,url:string,options:RequestOption) =>{
+const handleRequest = async (method:Method,url:string,options?:RequestOption) =>{
 
  try {
   console.log("url here",url)
     const config: AxiosRequestConfig = {
       method,
-      url:url,
+      url,
       headers: {
         "Content-Type": "application/json",
-        ...(options.headers || {}),
+        // ...(options?.headers || {}),
       },
-      ...(method === "POST" && { data: options.body }),
+      ...(method === "POST" && { data: options?.body }),
     };
     console.log("config",config)
     const response: AxiosResponse = await axios(config);

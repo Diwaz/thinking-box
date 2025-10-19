@@ -8,23 +8,61 @@ import { type BaseMessage } from "@langchain/core/messages";
 import { isAIMessage, ToolMessage } from "@langchain/core/messages";
 import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
+import { SYSTEM_PROMPT } from "./prompt";
 import {exec} from "child_process"
 import { applyPatch, createPatch } from "diff";
 import { Sandbox } from '@e2b/code-interpreter'
-import { SYSTEM_PROMPT } from "./prompt";
 import express from 'express';
 import cors from 'cors';
 import { WebSocket, WebSocketServer } from "ws";
+import { PrismaClient } from "./generated/prisma";
+import { createServer } from "http";
+import { runAgenticManager } from "./agenticManager";
 
 
 const app = express();
 
+const server = createServer(app);
+const wss = new WebSocketServer({server})
+
 app.use(express.json());
 app.use(cors());
 
-interface ConversationHistory {
-  messages :[]
+
+interface ProjectStore {
+  messages:[],
+  llmCalls:number
 }
+
+const prisma = new PrismaClient();
+
+const MessageState = z.object({
+  messages: z.array(z.custom<BaseMessage>()).register(registry, MessagesZodMeta),
+  llmCalls: z.number().optional()
+})
+
+
+type State = z.infer<typeof MessageState>;
+type UserStore = Record<string,State>
+type GlobalStore = Record<string,UserStore>
+
+const globalStore:GlobalStore = {}
+
+// {
+//   "user1": {
+//     "project-x0x": {
+//       messages : [
+//         {
+//           "ai msg":"file created"
+//         },
+
+//         {
+//           "human msg":"do dis"
+//         }
+//       ]
+//     }
+//   }
+// }
 
 const llm = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash-lite",
@@ -32,9 +70,9 @@ const llm = new ChatGoogleGenerativeAI({
 
 
 const sandbox = await Sandbox.create("zcxo3nr01udjamtzcdn4")
-
-const host = sandbox.getHost(5173)
-console.log(`https://${host}`)
+console.log("sandbox url",sandbox.sandboxId)
+// const host = sandbox.getHost(5173)
+// console.log(`https://${host}`)
 
 const createfile = tool(
   async ({ filePath, content }) => {
@@ -42,10 +80,10 @@ const createfile = tool(
     console.log("paths to write",file)
     // await Bun.write(file, content);
 
-    await sandbox.files.write(
-  filePath,
-  content,
-)
+//     await sandbox.files.write(
+//   filePath,
+//   content,
+// )
     return `File created successfully at ${filePath}`
   }, {
   name: "creates_new_file",
@@ -59,16 +97,16 @@ const createfile = tool(
 const runShellCommands = tool (
   async ({ command }) => {
     console.log("cmd:",command);
-    await sandbox.commands.run(
-  `${command}`, {
-  onStdout: (data) => {
-    console.log("command output e2b:",data)
-  },
-  onStderr: (data) => {
-    console.log("command error e2b:",data)
-  },
-}
-    );
+//     await sandbox.commands.run(
+//   `${command}`, {
+//   onStdout: (data) => {
+//     console.log("command output e2b:",data)
+//   },
+//   onStderr: (data) => {
+//     console.log("command error e2b:",data)
+//   },
+// }
+//     );
 
 
 //     exec(`${command}`, (error, stdout, stderr) => {
@@ -129,12 +167,6 @@ const tools = Object.values(toolsByName);
 const llmWithTools = llm.bindTools(tools);
 
 
-const MessageState = z.object({
-  messages: z.array(z.custom<BaseMessage>()).register(registry, MessagesZodMeta),
-  llmCalls: z.number().optional()
-})
-
-type State = z.infer<typeof MessageState>;
 
 async function llmCall(state: State) {
 
@@ -236,42 +268,107 @@ const agent = new StateGraph(MessageState)
 // }
 // start_agent();
 
+
+
+app.post('/project',async(req,res)=>{
+  const {userId,projectId,initialPrompt}= req.body;
+  try{
+
+    const response =  await prisma.project.create({
+      data:{
+        id:projectId,
+        initialPrompt,
+        userId, 
+      }
+    })
+    console.log("/project response",response)
+
+  return res.status(200).json({
+    "msg":response
+  });
+  }catch(err){
+    return res.status(400).json(err)
+  }
+
+})
+
+app.get("/project/:id",async(req,res)=>{
+  const {id} = await req.params;
+  try {
+    const projectData = await prisma.project.findFirst({
+      where: {
+        id
+      },
+      select:{
+        id:true,
+        title:true,
+        initialPrompt:true,
+        userId:true,
+        conversationHistory:true
+      }
+    })
+    res.status(200).json(projectData);
+  }catch(err){
+    console.log("err",err)
+    res.status(404).json({
+      "not found":err
+    })
+  }
+})
 const state:State ={
   messages:[],
   llmCalls:0,
 }
-
 app.post("/prompt",async (req,res)=>{
-  const {prompt,projectId} = req.body;
-  console.log("reached here w/ prompt",prompt)
-  state.messages.push(new HumanMessage(prompt))
+  const {prompt,projectId,userId} = req.body;
 
-  const result = await agent.invoke(state)
+  if (!projectId || !prompt || !userId){
+    return res.status(400).json({
+      "msg":"invalid input"
+    })
+  }
+
+  console.log("reached here w/ prompt",prompt)
+      // const prompt = await projectData.initialPropmt
+
+  if(!globalStore.userId){
+    globalStore.userId={
+      projectId :{
+        messages:[],
+        llmCalls:0
+      }
+    }
+  }
+
+  const projectState:State = globalStore.userId.projectId!
+
+  projectState.messages.push(new HumanMessage(prompt))
+  runAgenticManager(userId,projectId,projectState,clients)
+  // const result = await agent.invoke(projectState)
+
 
   res.status(200).json({
-   url:host,
-    messages:result.messages,
+  //  url:host,
+    // messages:result.messages,
+    status:"processing"
   })
 
 })
+const clients = new Map();
 
-const ws = new WebSocketServer({port:8585});
-ws.on('connection',(wss)=>{
-  console.log("user connected")
-wss.on('message',(data)=>{
-  console.log("data from ws",data.toString())
-  const response = JSON.parse(data.toString())
-  console.log("id",response.msg)
-  // const id = response.projectId;
+wss.on("connection", (ws, req) => {
+  const params = new URLSearchParams(req.url.replace("/?", ""));
+  const userId = params.get("userId");
+  console.log("New WebSocket:", userId);
 
-  // const context =ConvHistory.get(id)
-  // const resp = agent.invoke(context);
+  if (userId) clients.set(userId, ws);
 
-  // wss.send(resp)
-})
+  ws.on("close", () => {
+    clients.delete(userId);
+    console.log("client disconnected")
+  });
+});
 
-})
-
-app.listen(8080,()=>{
+server.listen(8080,()=>{
   console.log("server started to listen")
 });

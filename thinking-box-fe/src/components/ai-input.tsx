@@ -1,22 +1,35 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Plus, Paperclip, Globe, Lock, Mic, ArrowUp } from "lucide-react"
 import { useRouter } from "next/navigation"
-export function AIInput({type}:{type:string}) {
+import handleRequest from "@/utils/request"
+
+export function AIInput({type,projectId,userId}:{type:string,projectId?:string,userId?:string}) {
   const router = useRouter();
   const [value, setValue] = useState("")
   const [isPublic, setIsPublic] = useState(true)
 
-  const handleSubmit = (type:string) =>{
+
+
+  const handleSubmit = async(type:string) =>{
     if (type === "initial"){
-                 const projectId = "asdasdd"
+                 const projectId = crypto.randomUUID();
+                const options ={
+                  body:{
+                    userId:'a770b0b5-2bdc-49e3-9795-f887703803fa',
+                    projectId,
+                    initialPrompt:value
+                  }
+                }
+                await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`,options)
                 console.log("uuid",projectId)
                 router.push(`/project/${projectId}`)
     }else{
         console.log("handle secondary")
+
     }
   }
   return (
