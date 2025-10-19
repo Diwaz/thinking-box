@@ -15,6 +15,7 @@ import { SYSTEM_PROMPT } from "./prompt";
 import express from 'express';
 import cors from 'cors';
 import { WebSocket, WebSocketServer } from "ws";
+import { PrismaClient } from "./generated/prisma";
 
 
 const app = express();
@@ -22,9 +23,33 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-interface ConversationHistory {
-  messages :[]
+
+interface ProjectStore {
+  messages:[]
 }
+
+const prisma = new PrismaClient();
+
+type UserStore = Record<string,ProjectStore>
+type GlobalStore = Record<string,UserStore>
+
+const globalStore:GlobalStore = {}
+
+// {
+//   "user1": {
+//     "project-x0x": {
+//       messages : [
+//         {
+//           "ai msg":"file created"
+//         },
+
+//         {
+//           "human msg":"do dis"
+//         }
+//       ]
+//     }
+//   }
+// }
 
 const llm = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash-lite",
@@ -241,13 +266,74 @@ const state:State ={
   llmCalls:0,
 }
 
+app.post('/project',async(req,res)=>{
+  const {userId,projectId,initialPrompt}= req.body;
+  try{
+
+    const response =  await prisma.project.create({
+      data:{
+        id:projectId,
+        initialPrompt,
+        userId, 
+      }
+    })
+    console.log("/project response",response)
+
+  return res.status(200).json({
+    "msg":response
+  });
+  }catch(err){
+    return res.status(400).json(err)
+  }
+
+})
+
+app.get("/project/:id",async(req,res)=>{
+  const {id} = await req.params;
+  try {
+    const projectData = await prisma.project.findFirst({
+      where: {
+        id
+      },
+      select:{
+        id:true,
+        title:true,
+        initialPrompt:true,
+        userId:true,
+        conversationHistory:true
+      }
+    })
+    res.status(200).json(projectData);
+  }catch(err){
+    console.log("err",err)
+    res.status(404).json({
+      "not found":err
+    })
+  }
+})
+
 app.post("/prompt",async (req,res)=>{
   const {prompt,projectId} = req.body;
+
+  if (!projectId || !prompt){
+    res.status(400).json({
+      "msg":"invalid input"
+    })
+  }
+
   console.log("reached here w/ prompt",prompt)
   state.messages.push(new HumanMessage(prompt))
 
   const result = await agent.invoke(state)
 
+  // const convHistoryUpdate = await prisma.conversationHistory.update({
+  //   where:{
+  //     projectId,
+  //   },
+  //   data:{
+        
+  //   }
+  // })
   res.status(200).json({
    url:host,
     messages:result.messages,

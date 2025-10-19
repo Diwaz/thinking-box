@@ -23,26 +23,38 @@ import {
 import { AIInput } from '@/components/ai-input';
 import handleRequest from '@/utils/request';
 import dynamic from 'next/dynamic';
+import {createRoot} from 'react-dom/client'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
-function WebBuilder() {
+function WebBuilder({params}) {
+  const {id} = React.use(params)
+  console.log("projecID",id)
+
+   
   
   const [response, setResponse] = useState("")
-  const [initialPrompt, setInitialPrompt] = useState("design a landing page for a SaaS like this v0 or lovable where there is a beautiful modern landing page with animating gradient with the title of the webpage as thinking-box and place the some cool svg logo with the title at the navbar and for now there should be nothing but title at the navbar with cool modern glassmorphism navbar and in the hero section there should be a h1 bold title like Lets build future and some cool modern descritopn like v0 and lovable right now only design the landing page which this only things")
+  const [initialPrompt, setInitialPrompt] = useState("")
   const [messages, setMessages] = useState([])
 
   useEffect(()=>{
-    const options = {
-      body :{
-        prompt:initialPrompt
-      }
-    }
+    
     const fetchData = async ()=>{
+      const projectData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/${id}`)
+      console.log("initial prompt from server",projectData)
+      setInitialPrompt(projectData.initialPrompt);
+
+      if(projectData.conversationHistory.length < 1){
+        console.log("hello no conv history")
+      const options = {
+      body :{
+        prompt: projectData.initialPrompt
+      }
+        }
       const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
       setResponse(res.url);
       setMessages(res.messages);
-      console.log("ai resp",res.url)
-      console.log("ai resp msg",res.messages[0].kwargs.id)
-      console.log("ai resp content",res.messages[0].kwargs.content)
+      }
 
     }
     fetchData();
@@ -68,8 +80,6 @@ function WebBuilder() {
                     {messages.length > 0 ? (
                     <div className="aiMsg  ">
                     {/* <div className="aiMsg  p-4 w-[80%]"> */}
-                      
-                      
                      {
   messages.map((item, i) => {
     const content = item?.kwargs?.content;
@@ -79,10 +89,15 @@ function WebBuilder() {
     return Array.isArray(content) ? (
       <div key={i}>
         {content.map((subItem, idx) => (
-          <div key={idx}>
-            Ai msg for tool calls
-          </div>
+          // <div key={idx}>
+          //   Ai msg for tool calls
+          // </div>
           // <div key={`${i}-${idx}`}> {subItem?.text}</div>
+          
+           <Markdown remarkPlugins={[remarkGfm]} key={idx}>
+              {subItem?.text}
+           </Markdown> 
+          
         ))}
       </div>
     ) : typeof content === "object" && content !== null ? (

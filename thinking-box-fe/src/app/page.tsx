@@ -3,9 +3,7 @@ import { InitialPrompt } from "@/types/type";
 import { Codesandbox } from 'lucide-react';
 
 export default function Home() {
-  const initPrompt:InitialPrompt ={
-    prompt:""
-  }
+
   return (
     <main className="relative min-h-dvh overflow-clip">
       {/* animated background */}
@@ -27,7 +25,7 @@ export default function Home() {
           an AI-native workflow.
         </p>
 
-        <AIInput type="initial" initPrompt={initPrompt} />
+        <AIInput type="initial"  />
       </section>
     </main>
   )
