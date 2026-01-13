@@ -9,6 +9,7 @@ import { isAIMessage, ToolMessage } from "@langchain/core/messages";
 import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
 import { SYSTEM_PROMPT } from "./prompt";
+import type Sandbox from "@e2b/code-interpreter";
 
 
 const MessageState = z.object({
@@ -19,20 +20,25 @@ const MessageState = z.object({
 type State = z.infer<typeof MessageState>;
 
 
-export async function runAgenticManager(userId:string,projectId:string,state:State,clients:Map<string,WebSocket>){
+export async function runAgenticManager(userId:string,projectId:string,state:State,clients:Map<string,WebSocket>,sdx:Sandbox){
 
 const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash-lite",
+  model: "gemini-2.5-flash",
 });
 
 
 const createfile = tool(
   async ({ filePath, content }) => {
-    const file = Bun.file(filePath);
-    console.log("paths to write",file)
+    // const file = Bun.file(filePath);
+    try {
+      await sdx.files.write(filePath,content);
+      send("creating file")
+      return `File created successfully at ${filePath}`
 
-    send("creating file")
-    return `File created successfully at ${filePath}`
+    }catch(err){
+      return `Unable to create file error: ${err}`
+    }
+
   }, {
   name: "creates_new_file",
   description: "Creates new file and adds content to it",
@@ -45,11 +51,13 @@ const createfile = tool(
 const runShellCommands = tool (
   async ({ command }) => {
     send("entering command")
-
-    console.log("cmd:",command);
-
-
-    return ` command executed in the terminal successfully `;
+    try {
+      await sdx.commands.run(command);
+      console.log("cmd:",command);
+      return ` command executed in the terminal successfully `;
+    }catch(err){
+      return `Command failed error: ${err}`
+    }
   },{
     name : "run_shell_command",
     description:"runs the shell command given by AI in the terminal",

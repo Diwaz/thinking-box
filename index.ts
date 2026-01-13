@@ -73,7 +73,12 @@ const baseProjectParser = z.object({
 
 const createProjectParser = baseProjectParser.extend({
 
-  initialPrompt: z.string().min(1,{message:"String must be at least 5 character long"});
+  initialPrompt: z.string().min(1,{message:"String must be at least 5 character long"})
+})
+
+const createPromptParser = baseProjectParser.extend({
+  
+  prompt: z.string().min(1,{message:"String must be at least 5 character long"})
 })
 app.post('/project',async(req,res)=>{
   try{
@@ -132,47 +137,53 @@ const state:State ={
   llmCalls:0,
 }
 app.post("/prompt",async (req,res)=>{
-  const {prompt,projectId,userId} = req.body;
+  try {
 
-  if (!projectId || !prompt || !userId){
-    return res.status(400).json({
-      "msg":"invalid input"
-    })
-  }
-
-  console.log("reached here w/ prompt",prompt)
-      // const prompt = await projectData.initialPropmt
-
-  if(!globalStore.userId){
-    globalStore.userId={
-      projectId :{
-        messages:[],
-        llmCalls:0
+    const body = validateSchema(createPromptParser)(req.body);
+    const {prompt,projectId,userId} = body;
+    console.log("reached here w/ prompt",prompt)
+    // const prompt = await projectData.initialPropmt
+    
+    if(!globalStore.userId){
+      globalStore.userId={
+        projectId :{
+          messages:[],
+          llmCalls:0
+        }
       }
     }
-  }
 
-  const projectState:State = globalStore.userId.projectId!
+    
+    const projectState:State = globalStore.userId.projectId!
+
     const sandboxId = await getSandboxId(projectId);
-
+    
     if (!sandboxId){
       return res.status(404).json({
         error: "Unable to create Sandbox at the moment"
       })
     }
     const sdx = await Sandbox.connect(sandboxId);
+    const host = sdx.getHost(5173);
 
-
-  projectState.messages.push(new HumanMessage(prompt))
-  runAgenticManager(userId,projectId,projectState,clients)
-  // const result = await agent.invoke(projectState)
-
-
-  res.status(200).json({
-  //  url:host,
-    // messages:result.messages,
-    status:"processing"
-  })
+    
+    
+    projectState.messages.push(new HumanMessage(prompt))
+    runAgenticManager(userId,projectId,projectState,clients,sdx);
+    // const result = await agent.invoke(projectState)
+    
+    
+    res.status(200).json({
+      //  url:host,
+      // messages:result.messages,
+      status:"processing",
+      uri: `https://${host}`
+    })
+  }catch(err){
+    res.status(400).json({
+      error:err
+    })
+  }
 
 })
 const clients = new Map();
@@ -227,7 +238,7 @@ const activeSandbox:activeSandboxes[] = [
 const getSandboxId = async (projectId: string) : Promise<string | undefined> => {
   const index = activeSandbox.findIndex((item)=> Object.keys(item)[0] === projectId);
       if (index < 0){
-         const sdx = await Sandbox.create({
+         const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
           timeoutMs: 60_000,
           // timeoutMs:1800_000,
         })
@@ -246,7 +257,7 @@ const getSandboxId = async (projectId: string) : Promise<string | undefined> => 
       console.log("yo this the locs",index)
       if (currentTime - startTime > 1800_000){
         activeSandbox.splice(index,1);
-        const sdx = await Sandbox.create({
+        const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
           timeoutMs: SANDBOX_TIMEOUT,
           // timeoutMs:1800_000,
         })

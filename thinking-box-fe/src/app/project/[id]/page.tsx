@@ -64,7 +64,7 @@ function WebBuilder({params}) {
         }
       const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
       console.log("res from pes",res)
-      setResponse(res.url);
+      setResponse(res.uri);
       // setMessages(res.messages);
       // }
       
@@ -229,14 +229,14 @@ function WebBuilder({params}) {
         </TabsContent>
         <TabsContent value="password">
           <div className='h-full'>
-         {/* {
+         {
             response.length > 0  ?
-                        (<iframe src={`https://${response}`} frameborder="0" width="100%" height="100%"></iframe>) : (
+                        (<iframe src={`${response}`} frameborder="0" width="100%" height="100%"></iframe>) : (
               <div>
                 Loading...
               </div>
             )
-          } */}
+          }
 
             {/* <iframe src={`https://${response}`}  width="100%" height="100%"></iframe> */}
           </div>
