@@ -18,6 +18,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import { PrismaClient } from "./generated/prisma";
 import { createServer } from "http";
 import { runAgenticManager } from "./agenticManager";
+import { validateSchema } from "./lib/validate";
 
 
 const app = express();
@@ -65,11 +66,20 @@ const globalStore:GlobalStore = {}
 //     }
 //   }
 // }
+const baseProjectParser = z.object({
+  userId: z.uuid(),
+  projectId: z.uuid(),
+})
 
+const createProjectParser = baseProjectParser.extend({
+
+  initialPrompt: z.string().min(1,{message:"String must be at least 5 character long"});
+})
 app.post('/project',async(req,res)=>{
-  const {userId,projectId,initialPrompt}= req.body;
   try{
-
+    
+    const body = validateSchema(createProjectParser)(req.body);
+    const {userId,projectId,initialPrompt}= body;
     const response =  await prisma.project.create({
       data:{
         id:projectId,
@@ -104,6 +114,12 @@ app.get("/project/:id",async(req,res)=>{
       }
     })
     res.status(200).json(projectData);
+
+    
+
+
+
+
   }catch(err){
     console.log("err",err)
     res.status(404).json({
@@ -137,6 +153,15 @@ app.post("/prompt",async (req,res)=>{
   }
 
   const projectState:State = globalStore.userId.projectId!
+    const sandboxId = await getSandboxId(projectId);
+
+    if (!sandboxId){
+      return res.status(404).json({
+        error: "Unable to create Sandbox at the moment"
+      })
+    }
+    const sdx = await Sandbox.connect(sandboxId);
+
 
   projectState.messages.push(new HumanMessage(prompt))
   runAgenticManager(userId,projectId,projectState,clients)
@@ -233,6 +258,7 @@ const getSandboxId = async (projectId: string) : Promise<string | undefined> => 
       }
       return id;
 }
+
 // const sandboxId = await getSandboxId("projectId")
 // console.log("retrived data",sandboxId)
 
