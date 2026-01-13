@@ -45,6 +45,7 @@ const createfile = tool(
 const runShellCommands = tool (
   async ({ command }) => {
     send("entering command")
+
     console.log("cmd:",command);
 
 

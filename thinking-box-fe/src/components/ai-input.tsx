@@ -19,7 +19,7 @@ export function AIInput({type,projectId,userId}:{type:string,projectId?:string,u
                  const projectId = crypto.randomUUID();
                 const options ={
                   body:{
-                    userId:'a770b0b5-2bdc-49e3-9795-f887703803fa',
+                    userId:'e659d489-f25a-4223-b378-83c8ab431b35',
                     projectId,
                     initialPrompt:value
                   }
