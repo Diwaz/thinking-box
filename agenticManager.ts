@@ -23,7 +23,7 @@ type State = z.infer<typeof MessageState>;
 export async function runAgenticManager(userId:string,projectId:string,state:State,clients:Map<string,WebSocket>,sdx:Sandbox){
 
 const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash",
+  model: "gemini-2.5-flash-lite",
 });
 
 

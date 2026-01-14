@@ -35,7 +35,7 @@ interface ProjectStore {
   llmCalls:number
 }
 
-const SANDBOX_TIMEOUT = 60_000;
+const SANDBOX_TIMEOUT = 120_000;
 
 const prisma = new PrismaClient();
 
@@ -48,23 +48,25 @@ const MessageState = z.object({
 type State = z.infer<typeof MessageState>;
 type UserStore = Record<string,State>
 type GlobalStore = Record<string,UserStore>
+type activeSandboxes = Record<string,SandboxStore>
+
 
 const globalStore:GlobalStore = {}
 
 // {
-//   "user1": {
-//     "project-x0x": {
-//       messages : [
-//         {
-//           "ai msg":"file created"
-//         },
-
-//         {
-//           "human msg":"do dis"
-//         }
-//       ]
-//     }
-//   }
+  //   "user1": {
+    //     "project-x0x": {
+      //       messages : [
+        //         {
+          //           "ai msg":"file created"
+          //         },
+          
+          //         {
+            //           "human msg":"do dis"
+            //         }
+            //       ]
+            //     }
+            //   }
 // }
 const baseProjectParser = z.object({
   userId: z.uuid(),
@@ -136,6 +138,7 @@ const state:State ={
   messages:[],
   llmCalls:0,
 }
+
 app.post("/prompt",async (req,res)=>{
   try {
 
@@ -155,14 +158,17 @@ app.post("/prompt",async (req,res)=>{
 
     
     const projectState:State = globalStore.userId.projectId!
-
-    const sandboxId = await getSandboxId(projectId);
     
-    if (!sandboxId){
+    const sandboxId = await getSandboxId(projectId);
+     if (!sandboxId){
       return res.status(404).json({
         error: "Unable to create Sandbox at the moment"
       })
     }
+    console.log("state of active Sandboxes",activeSanbox); 
+
+    // activeSanbox.set(projectId,payload)
+  
     const sdx = await Sandbox.connect(sandboxId);
     const host = sdx.getHost(5173);
 
@@ -193,80 +199,100 @@ interface SandboxStore{
   sandboxId: string
   sandboxInitTime: number
 }
-// interface activeUser {
-//   userId:SandboxStore
-// }
-type activeSandboxes = Record<string,SandboxStore>
-const activeSandbox:activeSandboxes[] = [
-  
-  {'projectId': {
-    'sandboxId':'x0x0x0x',
-    'sandboxInitTime':1768278262013 
-  }},
-  // {'projectId2': {
-  //   'sandboxId':'x0x0x0x',
-  //   'sandboxInitTime':1700023123123
-  // }},
-  // {'projectId3': {
-  //   'sandboxId':'x0x0x0x',
-  //   'sandboxInitTime':1700023123123
-  // }}
-]
-// string[] = ['asdas','asdas']
-// activeUser[] = [activeUser,activeUser]
-// setInterval(() => {
+const activeSanbox = new Map<string,SandboxStore>();
+const pendingCreations = new Map<string,Promise<string>>();
 
-//   for (const sandbox of activeSandbox){
-//       // console.log("sandbox in objet",Object.keys(sandbox)[0])
-//       const projectId = Object.keys(sandbox)[0];
-//       const sandboxData:SandboxStore= Object.values(sandbox)[0]!;
-//       const startTime = sandboxData["sandboxInitTime"]
-//       const id = sandboxData["sandboxId"];
-//       console.log("timer",Date.now())
-//       const currentTime = Date.now()
-//       const index = activeSandbox.findIndex((item)=> Object.keys(item)[0] === projectId);
-//       console.log("yo this the locs",index)
-//       if (currentTime - startTime > 300000){
-//         activeSandbox.splice(index,1);
-//         console.log("removed")
-//       }
-//   }
+const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
 
+  const hasObj = activeSanbox.has(projectId);
 
-// }, 5000 );
+  if (hasObj){
 
-const getSandboxId = async (projectId: string) : Promise<string | undefined> => {
-  const index = activeSandbox.findIndex((item)=> Object.keys(item)[0] === projectId);
-      if (index < 0){
-         const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
-          timeoutMs: 60_000,
-          // timeoutMs:1800_000,
+    const currentTime = Date.now();
+    const project = activeSanbox.get(projectId);
+    const startTime = Number(project?.sandboxInitTime);
+    if ( currentTime - startTime < SANDBOX_TIMEOUT){
+      console.log(" Returning Existing active sandbox");
+      return project?.sandboxId;
+    }
+    console.log("Deleting prev sandbox and creating new one ...");
+    activeSanbox.delete(projectId);
+
+  }
+  if (pendingCreations.has(projectId)){
+    console.log("Creation already in progress, Joining ...");
+    return await pendingCreations.get(projectId);
+  }
+  const creationPromise = (async()=>{
+      console.log("creating new sandbox creation...");
+      const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
+        timeoutMs : SANDBOX_TIMEOUT,
+      })
+      const info = await sdx.getInfo();
+
+      activeSanbox.set(projectId,{
+        sandboxId:info.sandboxId,
+        sandboxInitTime: Date.now(),
+      })
+
+      console.log("created new sandbox with id:",info.sandboxId);
+      return info.sandboxId;
+  })();
+
+  // Register the promise in pending map
+  pendingCreations.set(projectId,creationPromise);
+
+  try {
+      return await creationPromise;
+  }catch(err){
+    console.log("Failed to create sandbox",err);
+    throw err;
+  }finally {
+    pendingCreations.delete(projectId);
+  }
+
+}
+const getSandboxIdv0 = async (projectId: string) : Promise<string | undefined> => {
+
+  const hasObj =   activeSanbox.has(projectId);
+  console.log("do we already have this sandbox",hasObj)
+  if (!hasObj){
+    const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
+      timeoutMs: 120_000,
+      // timeoutMs:1800_000,
+    })
+    const info = await sdx.getInfo()
+    console.log("created new sandbox",info.sandboxId);
+    activeSanbox.set(projectId,{
+      sandboxId:info.sandboxId,
+          sandboxInitTime: Date.now()
         })
-        const info = await sdx.getInfo()
-        console.log("created sandbox",info.sandboxId);
         return info.sandboxId;       
       }
-      const retrivedSandbox:activeSandboxes = activeSandbox[index]!;
-      const startTime = Number(Object.values(retrivedSandbox!)[0]?.sandboxInitTime);
-      const id = Object.values(retrivedSandbox!)[0]?.sandboxId
-      console.log("here from obj.keys",Object.values(retrivedSandbox)[0]?.sandboxId)
+      
+      const project = activeSanbox.get(projectId);
+      const startTime = Number(project?.sandboxInitTime)
+      const id = project?.sandboxId
       // console.log("sandbox in objet",Object.keys(sandbox)[0])
       
-      console.log("timer",Date.now())
       const currentTime = Date.now()
-      console.log("yo this the locs",index)
       if (currentTime - startTime > 1800_000){
-        activeSandbox.splice(index,1);
+        activeSanbox.delete(projectId);
         const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
           timeoutMs: SANDBOX_TIMEOUT,
           // timeoutMs:1800_000,
         })
-        const info = await sdx.getInfo()
-        console.log("created sandbox",info.sandboxId);
+
+        const info = await sdx.getInfo();
+        activeSanbox.set(projectId,{
+          sandboxId:info.sandboxId,
+          sandboxInitTime: Date.now() 
+        })
+
+        console.log("created new based on exisiting time time-passed:",`${currentTime - startTime}`,info.sandboxId);
         return info.sandboxId;
-        // create new sandbox
-        // console.log("removed")
       }
+      
       return id;
 }
 

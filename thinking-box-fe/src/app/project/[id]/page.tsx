@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Codesandbox } from 'lucide-react';
 import { Code,Globe,ChevronLeft,ChevronRight,LaptopMinimalCheck,ScreenShare,RotateCcw,Download,Ellipsis} from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -26,8 +26,11 @@ import dynamic from 'next/dynamic';
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
+
+
 function WebBuilder({params}) {
   const {id} = React.use(params)
+  // const loaded = useRef(false);
   console.log("projecID",id)
 
    
@@ -35,36 +38,41 @@ function WebBuilder({params}) {
   const [response, setResponse] = useState("")
   const [initialPrompt, setInitialPrompt] = useState("")
   const [messages, setMessages] = useState([])
-
+  
   useEffect(()=>{
-   
+    // if (loaded.current) return ;
     const ws = new WebSocket(`ws://localhost:8080/?userId=a770b0b5-2bdc-49e3-9795-f887703803fa`)
-
+    
     ws.onmessage = (e) => {
       console.log("user connected")
       const data = JSON.parse(e.data);
       console.log("msg from socket",data.message)
       setMessages(prev => [...prev,data.message]);
-
+      
     }
-
+    
     const fetchData = async ()=>{
       const projectData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/${id}`)
-      console.log("initial prompt from server",projectData)
-      setInitialPrompt(projectData.initialPrompt);
+      
+      console.log("initial prompt from server",projectData.conversationHistory)
+      if (projectData.conversationHistory.length === 0 ){
+        setInitialPrompt(projectData.initialPrompt);
+        console.log("hello no conv history")
+        const options = {
+          body :{
+            prompt: projectData.initialPrompt,
+            projectId:id,
+            userId:'a770b0b5-2bdc-49e3-9795-f887703803fa'
+          }
+        }
+          const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
+          console.log("res from pes",res)
+          setResponse(res.uri);
+
+      }
 
       // if(projectData.conversationHistory.length > 0){
-        console.log("hello no conv history")
-      const options = {
-      body :{
-        prompt: projectData.initialPrompt,
-        projectId:id,
-        userId:'a770b0b5-2bdc-49e3-9795-f887703803fa'
-      }
-        }
-      const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
-      console.log("res from pes",res)
-      setResponse(res.uri);
+
       // setMessages(res.messages);
       // }
       

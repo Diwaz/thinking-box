@@ -29,6 +29,15 @@ export function AIInput({type,projectId,userId}:{type:string,projectId?:string,u
                 router.push(`/project/${projectId}`)
     }else{
         console.log("handle secondary")
+  const options = {
+      body :{
+        prompt: value,
+        projectId,
+        userId,
+      }
+        }
+      await handleRequest("POST","http://localhost:8080/prompt",options)    
+
 
     }
   }
