@@ -19,6 +19,7 @@ import { PrismaClient } from "./generated/prisma";
 import { createServer } from "http";
 import { runAgenticManager } from "./agenticManager";
 import { validateSchema } from "./lib/validate";
+import { isObjectExist, loadProjectFromBucket } from "./bucketManager";
 
 
 const app = express();
@@ -236,6 +237,10 @@ const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
       })
 
       console.log("created new sandbox with id:",info.sandboxId);
+
+      if (await isObjectExist(projectId)){
+         loadProjectFromBucket(sdx,projectId) 
+      }
       return info.sandboxId;
   })();
 

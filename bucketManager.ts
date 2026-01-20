@@ -10,15 +10,15 @@ const localDir = process.env.BUCKET_LOCAL_DIR!;
 import fs from "fs";
 import path from "path";
 import Sandbox from "e2b";
-import { textSpanOverlapsWith } from "typescript";
+import type { Readable } from "stream";
 
 // export const makePrefix = (projectId:string)=>{
 //     return `projects/${projectId}/TB/`
 // }
 
 
-export const backupDataToBucket= async (sandbox:Sandbox,userId:string,projectId:string)=>{
-    let retries = 0;
+export const backupDataToBucket= async (sandbox:Sandbox,userId:string,projectId:string): Promise<boolean> =>{
+    
     try {
 
         const projectFiles = await sandbox.files.list('/home/user');
@@ -53,6 +53,10 @@ export const backupDataToBucket= async (sandbox:Sandbox,userId:string,projectId:
     if (tarResult.stdout.includes("TAR_FAILED")) {
       console.log(`TAR failed for ${projectId}`);
       await sandbox.commands.run(`rm -rf ${tempDir}`);
+    //   if (retries < 3) {
+    //       retries = retries +1;
+    //       backupDataToBucket(sandbox,userId,projectId,retries)
+    //   }
       return false;
     }
  try {
@@ -69,11 +73,11 @@ export const backupDataToBucket= async (sandbox:Sandbox,userId:string,projectId:
         await client.putObject({
             namespaceName:namespace,
             bucketName,
-            objectName: `thinking-box/projects/${projectId}`,
+            objectName: `thinking-box/projects/${projectId}.tar.gz`,
             putObjectBody: buffer,
             contentType: 'application/gzip' 
         })
-         console.log(`Saved to s3://${bucketName}/${projectId}`);
+         console.log(`Saved to oci-bucket://${bucketName}/${projectId}`);
       await sandbox.commands.run(`rm -rf ${tempDir}`);
 
       return true;
@@ -83,7 +87,94 @@ export const backupDataToBucket= async (sandbox:Sandbox,userId:string,projectId:
     }
     }catch(err){
         console.log("error:",err)
+        return false ;
     }
 
    
+}
+export const isObjectExist = async (projectId:string):Promise<boolean> => {
+
+    const objectName = `thinking-box/projects/${projectId}.tar.gz`;
+try {
+      await client.headObject({
+                 namespaceName: namespace,
+                 bucketName,
+                 objectName,
+            })
+    return true; 
+}catch(err){
+
+    console.log(`No saved project found`);
+    return false;
+}
+} 
+
+export const loadProjectFromBucket= async(
+  sandbox: Sandbox,
+  projectId: string
+): Promise<boolean> => {
+  try {
+    const objectName = `thinking-box/projects/${projectId}.tar.gz`;
+
+    console.log(`Checking bucket for project ${projectId}...`);
+
+    
+    if (!isObjectExist(projectId)){
+        return false;
+    }
+
+    const response = await client.getObject({
+        namespaceName: namespace,
+        bucketName,
+        objectName,
+    });
+    
+    if (!response.value) {
+      throw new Error("Empty bucket response");
+    }
+
+    // Convert stream to buffer
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of response.value as Readable) {
+      chunks.push(chunk);
+    }
+    const tarBuffer = Buffer.concat(chunks);
+
+    console.log(`Downloaded ${tarBuffer.length} bytes `);
+
+    const tempDir = `/tmp/untar_${projectId}`;
+    const tarPath = `${tempDir}/project.tar.gz`;
+
+    await sandbox.commands.run(`mkdir -p ${tempDir}`);
+
+
+    // Converting Buffer to ArrayBuffer
+    const arrayBuffer = new Uint8Array(tarBuffer).buffer;
+    await sandbox.files.write(tarPath, arrayBuffer);
+
+    // Extract
+    await sandbox.commands.run(`mkdir -p /home/user`);
+    const extractResult = await sandbox.commands.run(
+      `cd /home/user && tar -xzf ${tarPath} 2>&1`,
+      {
+        onStdout: (data) => console.log("UNTAR:", data),
+        onStderr: (data) => console.error("UNTAR stderr:", data)
+      }
+    );
+
+    if (extractResult.exitCode !== 0) {
+      console.error(`Extraction failed with exit code ${extractResult.exitCode}`);
+      return false;
+    }
+
+    console.log(`Project extracted to /home/user`);
+
+    await sandbox.commands.run(`rm -rf ${tempDir}`);
+
+    return true;
+
+  } catch (error) {
+    console.error("Error loading from S3:", error);
+    return false;
+  }
 }

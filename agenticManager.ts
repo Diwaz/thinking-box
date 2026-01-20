@@ -172,7 +172,7 @@ const agent = new StateGraph(MessageState)
     send("Agent started")
     await agent.invoke(state)
     // start to upload to s3
-    await backupDataToBucket(sdx,userId,projectId); 
+    const isBackup = await backupDataToBucket(sdx,userId,projectId); 
     send("LLM DONE")
     console.log("LLM Done")
 

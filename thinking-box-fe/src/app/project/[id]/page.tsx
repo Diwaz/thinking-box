@@ -69,6 +69,7 @@ function WebBuilder({params}) {
       const projectData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/${id}`)
       
       console.log("initial prompt from server",projectData.conversationHistory)
+
       if (projectData.conversationHistory.length === 0 ){
         setInitialPrompt(projectData.initialPrompt);
         console.log("hello no conv history")
@@ -82,6 +83,8 @@ function WebBuilder({params}) {
           const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
           console.log("res from pes",res)
           setResponse(res.uri);
+
+      }else{
 
       }
 
