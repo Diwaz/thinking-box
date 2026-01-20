@@ -10,6 +10,9 @@ import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
 import { SYSTEM_PROMPT } from "./prompt";
 import type Sandbox from "@e2b/code-interpreter";
+import { backupDataToBucket, uploadDir } from "./bucketManager";
+
+
 
 
 const MessageState = z.object({
@@ -52,15 +55,24 @@ const runShellCommands = tool (
   async ({ command }) => {
     send("entering command")
     try {
-      await sdx.commands.run(command);
-      console.log("cmd:",command);
-      return ` command executed in the terminal successfully `;
+      const output = await sdx.commands.run(command,{
+        onStdout: (data)=> {
+          console.log("command success output:",data)
+          // return `output from command: ${data}`
+        },
+        onStderr:(data)=>{ 
+          console.log("command failed output:",data)
+          // return `output from command: ${data}`
+        },
+      });
+      console.log("cmd:",output);
+      return ` ran this command : ${command} got this :${output}`
     }catch(err){
       return `Command failed error: ${err}`
     }
   },{
     name : "run_shell_command",
-    description:"runs the shell command given by AI in the terminal",
+    description:"runs the shell command given by AI in the terminal and you can also view the output of the command",
     schema: z.object ({
       command: z.string().describe("shell command to run in bash terminal")
     })
@@ -89,12 +101,11 @@ async function llmCall(state: State) {
   ])
 
   const newCallCount = state.llmCalls + 1
-  console.log("state of llmCalls",state.llmCalls)
+  console.log("state of llmCall",llmResponse.content)
   return {
     messages: [...state.messages, llmResponse],
     llmCalls: newCallCount,
   }
-  send("LLM done")
 
 
 }
@@ -112,11 +123,12 @@ async function toolNode(state: State) {
       const tool = toolsByName[toolCall.name];
       if (!tool) continue;
       const observation = await tool.invoke(toolCall);
+      console.log("tool msg",observation["content"])
       send("tool msg")
     result.push(
       new ToolMessage({
         tool_call_id: toolCall.id,
-        content:observation
+        content:observation["content"]
       })
     );
 
@@ -156,10 +168,13 @@ const agent = new StateGraph(MessageState)
             }))
         }
     };
-
+    console.log("agent started")
     send("Agent started")
     await agent.invoke(state)
+    // start to upload to s3
+    await backupDataToBucket(sdx,userId,projectId); 
     send("LLM DONE")
+    console.log("LLM Done")
 
 
 

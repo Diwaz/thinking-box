@@ -252,49 +252,48 @@ const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
   }
 
 }
-const getSandboxIdv0 = async (projectId: string) : Promise<string | undefined> => {
 
-  const hasObj =   activeSanbox.has(projectId);
-  console.log("do we already have this sandbox",hasObj)
-  if (!hasObj){
-    const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
-      timeoutMs: 120_000,
-      // timeoutMs:1800_000,
-    })
-    const info = await sdx.getInfo()
-    console.log("created new sandbox",info.sandboxId);
-    activeSanbox.set(projectId,{
-      sandboxId:info.sandboxId,
-          sandboxInitTime: Date.now()
-        })
-        return info.sandboxId;       
-      }
+//   const hasObj =   activeSanbox.has(projectId);
+//   console.log("do we already have this sandbox",hasObj)
+//   if (!hasObj){
+//     const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
+//       timeoutMs: 120_000,
+//       // timeoutMs:1800_000,
+//     })
+//     const info = await sdx.getInfo()
+//     console.log("created new sandbox",info.sandboxId);
+//     activeSanbox.set(projectId,{
+//       sandboxId:info.sandboxId,
+//           sandboxInitTime: Date.now()
+//         })
+//         return info.sandboxId;       
+//       }
       
-      const project = activeSanbox.get(projectId);
-      const startTime = Number(project?.sandboxInitTime)
-      const id = project?.sandboxId
-      // console.log("sandbox in objet",Object.keys(sandbox)[0])
+//       const project = activeSanbox.get(projectId);
+//       const startTime = Number(project?.sandboxInitTime)
+//       const id = project?.sandboxId
+//       // console.log("sandbox in objet",Object.keys(sandbox)[0])
       
-      const currentTime = Date.now()
-      if (currentTime - startTime > 1800_000){
-        activeSanbox.delete(projectId);
-        const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
-          timeoutMs: SANDBOX_TIMEOUT,
-          // timeoutMs:1800_000,
-        })
+//       const currentTime = Date.now()
+//       if (currentTime - startTime > 1800_000){
+//         activeSanbox.delete(projectId);
+//         const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
+//           timeoutMs: SANDBOX_TIMEOUT,
+//           // timeoutMs:1800_000,
+//         })
 
-        const info = await sdx.getInfo();
-        activeSanbox.set(projectId,{
-          sandboxId:info.sandboxId,
-          sandboxInitTime: Date.now() 
-        })
+//         const info = await sdx.getInfo();
+//         activeSanbox.set(projectId,{
+//           sandboxId:info.sandboxId,
+//           sandboxInitTime: Date.now() 
+//         })
 
-        console.log("created new based on exisiting time time-passed:",`${currentTime - startTime}`,info.sandboxId);
-        return info.sandboxId;
-      }
+//         console.log("created new based on exisiting time time-passed:",`${currentTime - startTime}`,info.sandboxId);
+//         return info.sandboxId;
+//       }
       
-      return id;
-}
+//       return id;
+// }
 
 // const sandboxId = await getSandboxId("projectId")
 // console.log("retrived data",sandboxId)

@@ -30,7 +30,7 @@ import remarkGfm from 'remark-gfm'
 
 function WebBuilder({params}) {
   const {id} = React.use(params)
-  // const loaded = useRef(false);
+  const loaded = useRef(false);
   console.log("projecID",id)
 
    
@@ -38,15 +38,29 @@ function WebBuilder({params}) {
   const [response, setResponse] = useState("")
   const [initialPrompt, setInitialPrompt] = useState("")
   const [messages, setMessages] = useState([])
+  const [thinking, setThinking] = useState(false)
+  const [building, setBuilding] = useState(false)
+  const [validating, setValidating] = useState(false)
+
   
   useEffect(()=>{
-    // if (loaded.current) return ;
+    if (loaded.current) return ;
+    loaded.current = true;
     const ws = new WebSocket(`ws://localhost:8080/?userId=a770b0b5-2bdc-49e3-9795-f887703803fa`)
     
     ws.onmessage = (e) => {
       console.log("user connected")
       const data = JSON.parse(e.data);
       console.log("msg from socket",data.message)
+      switch(data.message){
+        case "Thinking":
+          setThinking(true)
+        case "Building":
+          setBuilding(true)
+        case "Validating":
+          setValidating(true)
+      }
+
       setMessages(prev => [...prev,data.message]);
       
     }
@@ -79,7 +93,7 @@ function WebBuilder({params}) {
     }
     fetchData();
 
-    return () => ws.close();
+    // return () => ws.close();
   },[])
 
   return (
