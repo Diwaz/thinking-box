@@ -86,6 +86,9 @@ function WebBuilder({params}) {
 
       }else{
 
+      const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/load/${id}`)
+        console.log("existing data",existingData)
+        setResponse(existingData.uri)
       }
 
       // if(projectData.conversationHistory.length > 0){

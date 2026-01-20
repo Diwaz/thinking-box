@@ -20,6 +20,8 @@ import { createServer } from "http";
 import { runAgenticManager } from "./agenticManager";
 import { validateSchema } from "./lib/validate";
 import { isObjectExist, loadProjectFromBucket } from "./bucketManager";
+import { ConversationType } from "./generated/prisma";
+import { MessageFrom } from "./generated/prisma";
 
 
 const app = express();
@@ -123,11 +125,6 @@ app.get("/project/:id",async(req,res)=>{
     })
     res.status(200).json(projectData);
 
-    
-
-
-
-
   }catch(err){
     console.log("err",err)
     res.status(404).json({
@@ -135,6 +132,50 @@ app.get("/project/:id",async(req,res)=>{
     })
   }
 })
+
+app.get("/project/load/:id",async(req,res)=>{
+  const {id} = await req.params;
+  try {
+    const projectData = await prisma.project.findFirst({
+      where: {
+        id
+      },
+      select:{
+        id:true,
+        title:true,
+        initialPrompt:true,
+        userId:true,
+        conversationHistory:true
+      }
+    })
+   const sandboxId = await getSandboxId(id);
+     if (!sandboxId){
+      return res.status(404).json({
+        error: "Unable to create Sandbox at the moment"
+      })
+    }
+
+  
+    const sdx = await Sandbox.connect(sandboxId);
+    const host = sdx.getHost(5173);
+
+
+    res.status(200).json({
+      success: true,
+      data: projectData,
+      uri: `https://${host}`
+    });
+
+  }catch(err){
+    console.log("err",err)
+    res.status(404).json({
+      success: false,
+      Error:err
+    })
+  }
+})
+
+
 const state:State ={
   messages:[],
   llmCalls:0,
@@ -173,8 +214,22 @@ app.post("/prompt",async (req,res)=>{
     const sdx = await Sandbox.connect(sandboxId);
     const host = sdx.getHost(5173);
 
-    
-    
+   try {
+    await prisma.conversationHistory.create({
+        data: {
+          projectId,
+          contents: prompt,
+          messageFrom: MessageFrom.USER,
+          type: ConversationType.TEXT_MESSAGE
+        }
+    }) 
+   }catch(err){
+    res.status(400).json({
+      success: false,
+      error:err
+    })
+   } 
+
     projectState.messages.push(new HumanMessage(prompt))
     runAgenticManager(userId,projectId,projectState,clients,sdx);
     // const result = await agent.invoke(projectState)
