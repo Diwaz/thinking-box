@@ -11,6 +11,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { SYSTEM_PROMPT } from "./prompt";
 import type Sandbox from "@e2b/code-interpreter";
 import { backupDataToBucket, uploadDir } from "./bucketManager";
+import { getFiles } from ".";
 
 
 
@@ -26,7 +27,7 @@ type State = z.infer<typeof MessageState>;
 export async function runAgenticManager(userId:string,projectId:string,state:State,clients:Map<string,WebSocket>,sdx:Sandbox){
 
 const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash-lite",
+  model: "gemini-2.5-flash",
 });
 
 
@@ -35,7 +36,10 @@ const createfile = tool(
     // const file = Bun.file(filePath);
     try {
       await sdx.files.write(filePath,content);
-      send("creating file")
+       send({
+      action: "LLM_UPDATE",
+      message:"Creating File"
+    })
       return `File created successfully at ${filePath}`
 
     }catch(err){
@@ -53,7 +57,10 @@ const createfile = tool(
 
 const runShellCommands = tool (
   async ({ command }) => {
-    send("entering command")
+ send({
+      action: "LLM_UPDATE",
+      message:"Running Terminal Command"
+    })
     try {
       const output = await sdx.commands.run(command,{
         onStdout: (data)=> {
@@ -94,7 +101,10 @@ async function llmCall(state: State) {
 
   // if (state.llmCalls == 0){
     console.log("1st LLM CALLLLLLLL")
-    send("running LLM")
+ send({
+      action: "LLM_UPDATE",
+      message:"Analyzing query"
+    })
   const llmResponse = await llmWithTools.invoke([
     new SystemMessage(SYSTEM_PROMPT),
     ...state.messages
@@ -124,7 +134,10 @@ async function toolNode(state: State) {
       if (!tool) continue;
       const observation = await tool.invoke(toolCall);
       console.log("tool msg",observation["content"])
-      send("tool msg")
+         send({
+      action: "LLM_UPDATE",
+      message:"Using Tools"
+    })
     result.push(
       new ToolMessage({
         tool_call_id: toolCall.id,
@@ -169,11 +182,25 @@ const agent = new StateGraph(MessageState)
         }
     };
     console.log("agent started")
-    send("Agent started")
+    send({
+      action: "LLM_UPDATE",
+      message:"Agent started"
+    })
     await agent.invoke(state)
     // start to upload to s3
     const isBackup = await backupDataToBucket(sdx,userId,projectId); 
-    send("LLM DONE")
+    if (isBackup){
+      const files = await getFiles(sdx);
+      send({
+        action: "BUCKET_UPDATE",
+        files
+      })
+    }
+
+    send({
+      action: "LLM_UPDATE",
+      message:"LLM DONE"
+    })
     console.log("LLM Done")
 
 

@@ -55,17 +55,23 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
     ws.onmessage = (e) => {
       console.log("user connected")
       const data = JSON.parse(e.data);
-      console.log("msg from socket",data.message)
-      switch(data.message){
+      console.log("msg from socket",data.message.message)
+      switch(data.message.action){
+        case "LLM_UPDATE":
+          setMessages(prev => [...prev,data.message.message]); 
         case "Thinking":
           setThinking(true)
         case "Building":
           setBuilding(true)
-        case "Validating":
+        case "BUCKET_UPDATE":
           setValidating(true)
+          console.log("msg we receive from socket",data.message)
+
+          const tree = buildFileTree(data.message.files)  
+          sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
+          setFileTree(tree || [])
       }
 
-      setMessages(prev => [...prev,data.message]);
       
     }
     
@@ -91,16 +97,18 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
       }else{
 
     const treeData = sessionStorage.getItem(`project_tree_${id}`)
-    if (treeData){
-      console.log("we here on sessionStorage",JSON.parse(treeData))
-      console.log("response uri",response)
+    const projectURL = sessionStorage.getItem(`project_URL_${id}`)
+    if (treeData && projectURL){
+      // console.log("we here on sessionStorage",JSON.parse(treeData))
+      // console.log("response uri",response)
       setFileTree(JSON.parse(treeData)); 
-      
+      setResponse(projectURL);      
     }else {
       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
       sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
+      sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
       setFileTree(tree || []); 
 
       console.log("existing data",existingData)
@@ -115,6 +123,33 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 
     // return () => ws.close();
   },[])
+
+  useEffect(()=>{
+    const fetchUpdate =async ()=>{
+    //  console.log("check state here",fileTree) 
+    console.log("one last time")
+    const treeData = sessionStorage.getItem(`project_tree_${id}`)
+
+    // const hostedURL = sessionStorage.getItem(`project_URL_${id}`);
+    // console.log("fetching here",treeData)
+    if (!treeData){
+      console.log("we go fetching again")
+       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
+      const filesData = existingData.fileContent
+      const tree = buildFileTree(filesData)  
+      console.log("URL",existingData.uri)
+      sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
+      sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
+      setFileTree(tree || []); 
+
+      console.log("existing data",existingData)
+      setResponse(existingData.uri)
+    }
+
+    }
+    fetchUpdate();
+
+  },[fileTree,id])
 
   return (
     <div className='px-1'>
@@ -195,19 +230,19 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
                  
                     </div> 
                 <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]  '>
-                    <AIInput type="secondary" projectId={id} userId={'a770b0b5-2bdc-49e3-9795-f887703803fa'}/>
+                    <AIInput type="secondary" projectId={id} userId={'a770b0b5-2bdc-49e3-9795-f887703803fa'} changeFileState={setFileTree}/>
                 </div>
             </div>
             <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm h-full  flex-col ">
 
-        <Tabs defaultValue="account" className='h-full'>
+        <Tabs defaultValue="preview" className='h-full'>
 
                 <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10">
          <TabsList>
-          <TabsTrigger value="account">
+          <TabsTrigger value="editor">
             <Code/>
           </TabsTrigger>
-          <TabsTrigger value="password">
+          <TabsTrigger value="preview">
             <Globe/>
           </TabsTrigger>
         </TabsList>
@@ -245,7 +280,7 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
                    </div>
         </div>
                 <div className="iFrame  flex flex-1 flex-col">
-        <TabsContent value="account" >
+        <TabsContent value="editor" >
           <div className='flex'>
                     <div className='flex px-2  flex-[0_0_20%]'>
                       <div>
@@ -256,7 +291,7 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
       <CodeEditor file={selectedFile} />
           </div>
         </TabsContent>
-        <TabsContent value="password">
+        <TabsContent value="preview">
           <div className='h-full'>
          {
             response.length > 0  ?

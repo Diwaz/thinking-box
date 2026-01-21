@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Plus, Paperclip, Globe, Lock, Mic, ArrowUp } from "lucide-react"
 import { useRouter } from "next/navigation"
 import handleRequest from "@/utils/request"
+import { FileNode } from "./fileTree"
 
-export function AIInput({type,projectId,userId}:{type:string,projectId?:string,userId?:string}) {
+export function AIInput({type,projectId,userId,changeFileState}:{type:string,projectId?:string,userId?:string,changeFileState:(file: FileNode[])=> void}) {
   const router = useRouter();
   const [value, setValue] = useState("")
   const [isPublic, setIsPublic] = useState(true)
@@ -37,6 +38,12 @@ export function AIInput({type,projectId,userId}:{type:string,projectId?:string,u
       }
         }
       await handleRequest("POST","http://localhost:8080/prompt",options)    
+      // console.log("cleared session storage")
+      sessionStorage.removeItem(`project_tree_${projectId}`)
+
+      sessionStorage.removeItem(`project_URL_${projectId}`);
+      // console.log(sessionStorage.getItem(`project_tree_${projectId}`));
+      changeFileState([]);
 
 
     }
