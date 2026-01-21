@@ -25,6 +25,9 @@ import handleRequest from '@/utils/request';
 import dynamic from 'next/dynamic';
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import Editor from '@monaco-editor/react';
+import {buildFileTree, FileNode, FileTree} from '@/components/fileTree';
+import { CodeEditor } from '@/components/codeEditor';
 
 
 
@@ -41,7 +44,8 @@ function WebBuilder({params}) {
   const [thinking, setThinking] = useState(false)
   const [building, setBuilding] = useState(false)
   const [validating, setValidating] = useState(false)
-
+const [fileTree, setFileTree] = useState<FileNode[]>([]);
+const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   
   useEffect(()=>{
     if (loaded.current) return ;
@@ -86,16 +90,16 @@ function WebBuilder({params}) {
 
       }else{
 
-      const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/load/${id}`)
+      const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
+      // const conversation = existingData.conversation
+      const filesData = existingData.fileContent
+        const tree = buildFileTree(filesData)  
+        setFileTree(tree || []); 
         console.log("existing data",existingData)
         setResponse(existingData.uri)
       }
 
-      // if(projectData.conversationHistory.length > 0){
-
-      // setMessages(res.messages);
-      // }
-      
+     
     }
     fetchData();
 
@@ -232,34 +236,21 @@ function WebBuilder({params}) {
         </div>
                 <div className="iFrame  flex flex-1 flex-col">
         <TabsContent value="account" >
-          <div className='h-full '>
-            <CardHeader>
-              <CardTitle>Account</CardTitle>
-              <CardDescription>
-                Make changes to your account here. Click save when you&apos;re
-                done.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6">
-              <div className="grid gap-3">
-                <Label htmlFor="tabs-demo-name">Name</Label>
-                <Input id="tabs-demo-name" defaultValue="Pedro Duarte" />
-              </div>
-              <div className="grid gap-3">
-                <Label htmlFor="tabs-demo-username">Username</Label>
-                <Input id="tabs-demo-username" defaultValue="@peduarte" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Save changes</Button>
-            </CardFooter>
+          <div className='flex'>
+                    <div className='flex px-2  flex-[0_0_20%]'>
+                      <div>
+                        <FileTree nodes={fileTree} onFileClick={(file)=>setSelectedFile(file)}/>
+                      </div>
+                    </div>
+      {/* <Editor height="90vh"  className='flex flex-[0_0_100%]  ' defaultLanguage="javascript" theme='vs-dark' defaultValue="// some comment" /> */}
+      <CodeEditor file={selectedFile} />
           </div>
         </TabsContent>
         <TabsContent value="password">
           <div className='h-full'>
          {
             response.length > 0  ?
-                        (<iframe src={`${response}`} frameborder="0" width="100%" height="100%"></iframe>) : (
+                        (<iframe src={`${response}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
               <div>
                 Loading...
               </div>

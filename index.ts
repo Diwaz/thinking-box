@@ -133,7 +133,8 @@ app.get("/project/:id",async(req,res)=>{
   }
 })
 
-app.get("/project/load/:id",async(req,res)=>{
+
+app.get("/project/history/:id",async(req,res)=>{
   const {id} = await req.params;
   try {
     const projectData = await prisma.project.findFirst({
@@ -157,12 +158,34 @@ app.get("/project/load/:id",async(req,res)=>{
 
   
     const sdx = await Sandbox.connect(sandboxId);
+     const result = await sdx.commands.run(
+            'find /home/user/src -type f 2>/dev/null || echo ""',
+            { cwd: '/home/user' }
+        );
+
+        const filePaths = result.stdout.split('\n').filter(p=>p.trim() && p.startsWith('/home/user/src'));
+
+        const files = await Promise.all(
+            filePaths.map(async(path)=>{
+                try {
+                    const content = await sdx.files.read(path);
+                    return{
+                        path:path,
+                        content:content.toString()
+                    };
+                } catch (error) {
+                    console.error(`Error reading ${path}:`, error)
+                    return null 
+                }
+            })
+        )
     const host = sdx.getHost(5173);
 
 
     res.status(200).json({
       success: true,
-      data: projectData,
+      conversation: projectData,
+      fileContent: files,
       uri: `https://${host}`
     });
 
