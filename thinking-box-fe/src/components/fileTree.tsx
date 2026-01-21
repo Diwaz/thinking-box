@@ -69,6 +69,7 @@ interface FileTreeProps {
 }
 
 export function FileTree({ nodes, onFileClick }: FileTreeProps) {
+    console.log("hello from nodes",nodes)
   return (
     <div className='file-tree'>
       {nodes.map((node, index) => (
@@ -96,7 +97,7 @@ function FileTreeNode({ node, onFileClick }: FileTreeNodeProps) {
   console.log("nodes",node)
   return (
     <div className='file-tree-node'>
-      <div onClick={handleClick} className='flex items-center gap-2 px-2 py-1  cursor-pointer'>
+      <div onClick={handleClick} className='flex items-center gap-2  py-1  cursor-pointer'>
         {node.type === 'folder' ? (
           <>
             {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -112,7 +113,7 @@ function FileTreeNode({ node, onFileClick }: FileTreeNodeProps) {
       </div>
 
       {node.type==='folder' && isOpen && node.children && (
-        <div className='ml-4'>
+        <div className=''>
           {node.children.map((child, index)=>(
             <FileTreeNode key={index} node={child} onFileClick={onFileClick}  />
           ))}

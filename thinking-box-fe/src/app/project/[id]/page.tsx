@@ -2,17 +2,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Codesandbox } from 'lucide-react';
 import { Code,Globe,ChevronLeft,ChevronRight,LaptopMinimalCheck,ScreenShare,RotateCcw,Download,Ellipsis} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Tabs,
   TabsContent,
@@ -46,7 +35,18 @@ function WebBuilder({params}) {
   const [validating, setValidating] = useState(false)
 const [fileTree, setFileTree] = useState<FileNode[]>([]);
 const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
-  
+ 
+
+
+  // useEffect(()=>{
+  //   const treeData = sessionStorage.getItem(`project_tree_${id}`)
+
+  //   if (treeData){
+  //     console.log("length of tree ",JSON.parse(treeData))
+  //     setFileTree(JSON.parse(treeData));
+  //   }
+  // },[])
+
   useEffect(()=>{
     if (loaded.current) return ;
     loaded.current = true;
@@ -90,15 +90,25 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 
       }else{
 
+    const treeData = sessionStorage.getItem(`project_tree_${id}`)
+    if (treeData){
+      console.log("we here on sessionStorage",JSON.parse(treeData))
+      console.log("response uri",response)
+      setFileTree(JSON.parse(treeData)); 
+      
+    }else {
       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
-      // const conversation = existingData.conversation
       const filesData = existingData.fileContent
-        const tree = buildFileTree(filesData)  
-        setFileTree(tree || []); 
-        console.log("existing data",existingData)
-        setResponse(existingData.uri)
-      }
+      const tree = buildFileTree(filesData)  
+      sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
+      setFileTree(tree || []); 
 
+      console.log("existing data",existingData)
+      setResponse(existingData.uri)
+    }
+    // const conversation = existingData.conversation
+      }
+      
      
     }
     fetchData();
@@ -178,7 +188,7 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
                       
                     </div>
                     ):(
-                      <div>nothing to see</div>
+                      <div></div>
                     )}
 
                 

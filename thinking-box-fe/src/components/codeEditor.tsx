@@ -27,9 +27,9 @@ export function CodeEditor({ file }: CodeViewerProps) {
   
   return (
     <div className="h-full w-full">
-      <div className="bg-gray-800 text-white px-4 py-2 border-b border-gray-700">
+      {/* <div className="bg-gray-800 text-white px-4 py-2 border-b border-gray-700">
         {file.name}
-      </div>
+      </div> */}
       
       <Editor
         height="90vh"

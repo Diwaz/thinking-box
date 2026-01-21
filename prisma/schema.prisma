@@ -30,6 +30,7 @@ model Project {
   user User @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   conversationHistory ConversationHistory[]
+  context String?
 }
 
 model ConversationHistory {
