@@ -12,15 +12,22 @@ import {
 import { AIInput } from '@/components/ai-input';
 import handleRequest from '@/utils/request';
 import dynamic from 'next/dynamic';
-import Markdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import Editor from '@monaco-editor/react';
+
 import {buildFileTree, FileNode, FileTree} from '@/components/fileTree';
 import { CodeEditor } from '@/components/codeEditor';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import AiMsgBox from '@/components/aiMessageBox';
+import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 
-
+enum From {
+  USER,
+  ASSISTANT
+}
+export interface MessagePacket {
+  content: string,
+  from: From,
+}
 
 function WebBuilder({params}) {
   const {id} = React.use(params)
@@ -31,7 +38,7 @@ function WebBuilder({params}) {
   
   const [response, setResponse] = useState("")
   const [initialPrompt, setInitialPrompt] = useState("")
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState<MessagePacket[]>([])
   const [thinking, setThinking] = useState(false)
   const [building, setBuilding] = useState(false)
   const [validating, setValidating] = useState(false)
@@ -61,14 +68,19 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
       console.log("msg from socket",data.message.message)
       switch(data.message.action){
         case "LLM_UPDATE":
-          setMessages(prev => [...prev,data.message.message]); 
+          setMessages(prev => [...prev,
+            {
+              content: data.message.message,
+              from: From.ASSISTANT
+            }
+          ]); 
         case "Thinking":
           setThinking(true)
         case "Building":
           setBuilding(true)
         case "BUCKET_UPDATE":
           // setValidating(true)
-          console.log("msg we receive from socket",data.message)
+          // console.log("msg we receive from socket",data.message)
 
           const tree = buildFileTree(data.message.files)  
           sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
@@ -81,11 +93,18 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
     
     const fetchData = async ()=>{
       const projectData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/${id}`)
-      
+
       console.log("initial prompt from server",projectData.conversationHistory)
+
 
       if (projectData.conversationHistory.length === 0 ){
         setInitialPrompt(projectData.initialPrompt);
+          setMessages(prev => [...prev,
+            {
+              content: projectData.initialPrompt,
+              from: From.USER
+            }
+          ]); 
         console.log("hello no conv history")
         const options = {
           body :{
@@ -99,6 +118,14 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
           setResponse(res.uri);
 
       }else{
+        const messageHistory = projectData.conversationHistory; 
+        messageHistory.forEach((msg)=>{
+          setMessages((prev)=>[...prev,{
+            content:msg.contents,
+            from: msg.messageFrom === "USER" ? From.USER : From.ASSISTANT
+          }])
+        })
+
         setIsFileTreeLoading(true);
     const treeData = sessionStorage.getItem(`project_tree_${id}`)
     const projectURL = sessionStorage.getItem(`project_URL_${id}`)
@@ -152,7 +179,7 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
       sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
       setFileTree(tree || []); 
 
-      console.log("existing data",existingData)
+      // console.log("existing data",existingData)
       setResponse(existingData.uri)
     }
 
@@ -170,70 +197,43 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
         <div className="chatWrapper  flex h-[calc(100vh-40px)] gap-2  ">
             <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end ">
                   <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10 '>
-                    {/* <div className="HumanMsg flex flex-row-reverse ">
-                      <div className="humanChatWrapper bg-[#1f1f1f] p-4 rounded-lg w-[80%]">
-                        
-                      <div className=''>
-                                {initialPrompt}
-                      </div>
-                      </div>
-                    </div> */}
+                  
                     {messages.length > 0 ? (
-                    <div className="aiMsg  ">
-                    {/* <div className="aiMsg  p-4 w-[80%]"> */}
+                    <div className="aiMsg flex flex-col gap-5  ">
                      {
-  messages.map((item, i) => {
-    const content = item;
+  messages.map((item, i) => (
+     <>
+      {
+        item.from == From.USER ? (
+          <div key={i} className=' flex flex-col w-full items-end gap-2 '>
+   <Avatar className='w-7 h-7 relative'>
+      <AvatarImage
+        src="https://vercel.com/api/www/avatar/eKRgDWQIpnvG1GmMj4z6XZFr"
+        alt="@shadcn"
+        className='rounded-xl'
+      />
+      <AvatarFallback>CN</AvatarFallback>
+    </Avatar>
+            <div className='bg-[#1F1F1F]  w-[80%] lg:w-[40%] flex justify-end p-4 rounded-sm'>
 
-    const isAI = item;
-    // console.log("checking",checking)
-    return Array.isArray(content) ? (
-      <div key={i}>
-        {content.map((subItem, idx) => (
-          // <div key={idx}>
-          //   Ai msg for tool calls
-          // </div>
-          // <div key={`${i}-${idx}`}> {subItem?.text}</div>
-          
-           <Markdown remarkPlugins={[remarkGfm]} key={idx}>
-              {subItem?.text}
-           </Markdown> 
-          
-        ))}
-      </div>
-    ) : typeof content === "object" && content !== null ? (
-        // here it uses tool calling 
-      <div key={i}>
-        Using tools {content?.kwargs?.content ?? JSON.stringify(content)}
-      </div>
-    ) : (
-      <div key={i}>
-        {Object.hasOwn(isAI,'tool_calls') ? (
-          <div>
-
+          {item.content}
+            </div>
           </div>
         ):(
-          <div>
-  <div className="HumanMsg flex flex-row-reverse w-full">
-                      <div className="humanChatWrapper bg-[#1f1f1f] p-4 rounded-lg w-[80%]">
-                        
-                      <div className=''>
-                                {content?.text ?? content ?? "No content"}
-                      </div>
-                      </div>
-                    </div>
+          <div key={i}>
+            {/* {item.content} */}
+           <AiMsgBox message={item}/> 
           </div>
-        )}
-        {/* {content?.text ?? content ?? "No content"} */}
-      </div>
-    );
-  })
+        )
+      }
+      </> 
+  ))
 }
 
                       
                     </div>
                     ):(
-                      <div></div>
+                      <div>Empty</div>
                     )}
 
                 
@@ -353,8 +353,8 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
          {
             response.length > 0  ?
                         (<iframe src={`${response}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
-              <div>
-                      <Card className="w-full max-w-xs">
+              <div className=' h-full flex justify-center items-center'>
+                      <Card className="w-full max-w-xl ">
       <CardHeader>
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-4 w-1/2" />

@@ -69,7 +69,7 @@ interface FileTreeProps {
 }
 
 export function FileTree({ nodes, onFileClick }: FileTreeProps) {
-    console.log("hello from nodes",nodes)
+    // console.log("hello from nodes",nodes)
   return (
     <div className='file-tree'>
       {nodes.map((node, index) => (
@@ -94,7 +94,7 @@ function FileTreeNode({ node, onFileClick }: FileTreeNodeProps) {
       onFileClick(node)
     }
   }
-  console.log("nodes",node)
+//   console.log("nodes",node)
   return (
     <div className='file-tree-node'>
       <div onClick={handleClick} className='flex items-center gap-2  py-1  cursor-pointer'>
