@@ -37,6 +37,7 @@ export function AIInput({type,projectId,userId,changeFileState}:{type:string,pro
         userId,
       }
         }
+
       await handleRequest("POST","http://localhost:8080/prompt",options)    
       // console.log("cleared session storage")
       sessionStorage.removeItem(`project_tree_${projectId}`)
@@ -133,7 +134,7 @@ export function AIInput({type,projectId,userId,changeFileState}:{type:string,pro
             </Button>
             <Button
               type="button"
-              className="h-9 w-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              className="h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               aria-label="Send"
               onClick={() => {
                 handleSubmit(type);
@@ -202,7 +203,7 @@ export function AIInput({type,projectId,userId,changeFileState}:{type:string,pro
             </Button>
             <Button
               type="button"
-              className="h-9 w-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              className="h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               aria-label="Send"
               onClick={() => {
                 handleSubmit(type);

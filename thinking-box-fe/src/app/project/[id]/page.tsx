@@ -17,6 +17,8 @@ import remarkGfm from 'remark-gfm'
 import Editor from '@monaco-editor/react';
 import {buildFileTree, FileNode, FileTree} from '@/components/fileTree';
 import { CodeEditor } from '@/components/codeEditor';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 
 
@@ -35,6 +37,7 @@ function WebBuilder({params}) {
   const [validating, setValidating] = useState(false)
 const [fileTree, setFileTree] = useState<FileNode[]>([]);
 const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
  
 
 
@@ -64,11 +67,12 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
         case "Building":
           setBuilding(true)
         case "BUCKET_UPDATE":
-          setValidating(true)
+          // setValidating(true)
           console.log("msg we receive from socket",data.message)
 
           const tree = buildFileTree(data.message.files)  
           sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
+          setIsFileTreeLoading(false);
           setFileTree(tree || [])
       }
 
@@ -95,7 +99,7 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
           setResponse(res.uri);
 
       }else{
-
+        setIsFileTreeLoading(true);
     const treeData = sessionStorage.getItem(`project_tree_${id}`)
     const projectURL = sessionStorage.getItem(`project_URL_${id}`)
     if (treeData && projectURL){
@@ -103,7 +107,11 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
       // console.log("response uri",response)
       setFileTree(JSON.parse(treeData)); 
       setResponse(projectURL);      
+
+        setIsFileTreeLoading(false);
     }else {
+
+        setIsFileTreeLoading(true);
       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
@@ -111,7 +119,8 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
       sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
       setFileTree(tree || []); 
 
-      console.log("existing data",existingData)
+      setIsFileTreeLoading(false);
+      // console.log("existing data",existingData)
       setResponse(existingData.uri)
     }
     // const conversation = existingData.conversation
@@ -119,6 +128,7 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
       
      
     }
+    setIsFileTreeLoading(false);
     fetchData();
 
     // return () => ws.close();
@@ -235,7 +245,7 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
             </div>
             <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm h-full  flex-col ">
 
-        <Tabs defaultValue="preview" className='h-full'>
+        <Tabs defaultValue="editor" className='h-full'>
 
                 <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10">
          <TabsList>
@@ -281,11 +291,58 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
         </div>
                 <div className="iFrame  flex flex-1 flex-col">
         <TabsContent value="editor" >
-          <div className='flex'>
-                    <div className='flex px-2  flex-[0_0_20%]'>
-                      <div>
-                        <FileTree nodes={fileTree} onFileClick={(file)=>setSelectedFile(file)}/>
+          <div className='flex '>
+                    <div className='flex flex-col px-2 flex-[0_0_25%]'>
+                      {
+                        isFileTreeLoading ? (
+                      <div className='flex flex-col gap-2'>
+
+                      <div className='flex gap-2'>
+                        <Skeleton className='h-3 w-3'/>
+                        <div className='flex flex-col gap-2'>
+                        <Skeleton className='h-3 w-20'/>
+                        <Skeleton className='h-3 w-15'/>
+                        <Skeleton className='h-3 w-20'/>
+
+                        </div>
+
                       </div>
+                      <div className='flex gap-2'>
+                        <Skeleton className='h-3 w-3'/>
+                        <div className='flex flex-col gap-2'>
+                        <Skeleton className='h-3 w-20'/>
+                        <Skeleton className='h-3 w-20'/>
+                        <Skeleton className='h-3 w-15'/>
+
+                        </div>
+
+                      </div>
+                      <div className='flex gap-2'>
+                        <Skeleton className='h-3 w-3'/>
+                        <div className='flex flex-col gap-2'>
+                        <Skeleton className='h-3 w-20'/>
+                        <Skeleton className='h-3 w-20'/>
+                        <Skeleton className='h-3 w-15'/>
+
+                        </div>
+
+                      </div>
+                         <div className='flex gap-2'>
+                        <Skeleton className='h-3 w-3'/>
+                        <div className='flex flex-col gap-2'>
+                        <Skeleton className='h-3 w-20'/>
+                        <Skeleton className='h-3 w-15'/>
+                        <Skeleton className='h-3 w-20'/>
+
+                        </div>
+
+                      </div>
+                      </div>) : ( <div>
+                        <FileTree nodes={fileTree} onFileClick={(file)=>setSelectedFile(file)}/>
+                      </div>)
+                      }
+                     
+
                     </div>
       {/* <Editor height="90vh"  className='flex flex-[0_0_100%]  ' defaultLanguage="javascript" theme='vs-dark' defaultValue="// some comment" /> */}
       <CodeEditor file={selectedFile} />
@@ -297,7 +354,15 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
             response.length > 0  ?
                         (<iframe src={`${response}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
               <div>
-                Loading...
+                      <Card className="w-full max-w-xs">
+      <CardHeader>
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-4 w-1/2" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="aspect-video w-full" />
+      </CardContent>
+    </Card>
               </div>
             )
           }

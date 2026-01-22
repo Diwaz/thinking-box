@@ -12,7 +12,13 @@ import { SYSTEM_PROMPT } from "./prompt";
 import type Sandbox from "@e2b/code-interpreter";
 import { backupDataToBucket, uploadDir } from "./bucketManager";
 import { getFiles } from ".";
+import { secureCommand } from "./guardrails";
+import { PrismaClient } from "./generated/prisma";
+import { ConversationType } from "./generated/prisma";
+import { MessageFrom } from "./generated/prisma";
 
+
+const prisma = new PrismaClient();
 
 
 
@@ -61,7 +67,9 @@ const runShellCommands = tool (
       action: "LLM_UPDATE",
       message:"Running Terminal Command"
     })
+
     try {
+        secureCommand(command);
       const output = await sdx.commands.run(command,{
         onStdout: (data)=> {
           console.log("command success output:",data)
@@ -186,8 +194,19 @@ const agent = new StateGraph(MessageState)
       action: "LLM_UPDATE",
       message:"Agent started"
     })
-    await agent.invoke(state)
+    const result = await agent.invoke(state)
     // start to upload to s3
+    console.log("last AI MSG",result.messages.at(-1).content);
+    const lastMessage = result.messages.at(-1).content;
+
+    if (typeof(lastMessage)==="string"){
+
+    send({
+      action: "LLM_UPDATE",
+      message:lastMessage
+    })
+    }
+
     const isBackup = await backupDataToBucket(sdx,userId,projectId); 
     if (isBackup){
       const files = await getFiles(sdx);
@@ -197,10 +216,15 @@ const agent = new StateGraph(MessageState)
       })
     }
 
-    send({
-      action: "LLM_UPDATE",
-      message:"LLM DONE"
-    })
+  await prisma.conversationHistory.create({
+    data:{
+      projectId,
+      type: ConversationType.TEXT_MESSAGE,
+      messageFrom:MessageFrom.ASSISTANT,
+      contents: lastMessage
+    }
+  })
+
     console.log("LLM Done")
 
 
