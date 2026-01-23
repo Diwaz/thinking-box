@@ -1,20 +1,12 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { tool } from "@langchain/core/tools";
 import * as z from "zod";
-import { StateGraph, START, END, Command } from "@langchain/langgraph";
 import { MessagesZodMeta } from "@langchain/langgraph";
 import { registry } from "@langchain/langgraph/zod";
 import { type BaseMessage } from "@langchain/core/messages";
-import { isAIMessage, ToolMessage } from "@langchain/core/messages";
-import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
-import { SYSTEM_PROMPT } from "./prompt";
-import {exec} from "child_process"
-import { applyPatch, createPatch } from "diff";
 import { Sandbox } from '@e2b/code-interpreter'
 import express from 'express';
 import cors from 'cors';
-import { WebSocket, WebSocketServer } from "ws";
+import {  WebSocketServer } from "ws";
 import { PrismaClient } from "./generated/prisma";
 import { createServer } from "http";
 import { runAgenticManager } from "./agenticManager";
@@ -33,10 +25,7 @@ app.use(express.json());
 app.use(cors());
 
 
-interface ProjectStore {
-  messages:[],
-  llmCalls:number
-}
+
 
 const SANDBOX_TIMEOUT = 120_000;
 
@@ -49,28 +38,24 @@ const MessageState = z.object({
 
 
 type State = z.infer<typeof MessageState>;
-type UserStore = Record<string,State>
-type GlobalStore = Record<string,UserStore>
-type activeSandboxes = Record<string,SandboxStore>
+type ProjectStore = Map<string,State>
 
 
-const globalStore:GlobalStore = {}
+// const globalStore:GlobalStore = {}
+  const globalStore = new Map<string,ProjectStore>();
+
 
 // {
-  //   "user1": {
-    //     "project-x0x": {
-      //       messages : [
-        //         {
-          //           "ai msg":"file created"
-          //         },
-          
-          //         {
-            //           "human msg":"do dis"
-            //         }
-            //       ]
-            //     }
-            //   }
+//   "user1": {
+//     "project1":{
+//       messages:[]
+//     },
+//     "project2":{
+//       messages:[]
+//     }
+//   }
 // }
+
 export const getFiles = async (sdx:Sandbox)=>{
 
      const result = await sdx.commands.run(
@@ -218,18 +203,17 @@ app.post("/prompt",async (req,res)=>{
     const {prompt,projectId,userId} = body;
     console.log("reached here w/ prompt",prompt)
     // const prompt = await projectData.initialPropmt
-    
-    if(!globalStore.userId){
-      globalStore.userId={
-        projectId :{
-          messages:[],
-          llmCalls:0
-        }
-      }
+   
+    if (!globalStore.has(userId)){
+      globalStore.set(userId,new Map());
+      globalStore.get(userId)?.set(projectId,{
+        messages:[],
+        llmCalls:0
+      });
     }
 
     
-    const projectState:State = globalStore.userId.projectId!
+    const projectState:State = globalStore.get(userId)?.get(projectId)!;
     
     const sandboxId = await getSandboxId(projectId);
      if (!sandboxId){
@@ -259,7 +243,7 @@ app.post("/prompt",async (req,res)=>{
       error:err
     })
    } 
-
+    
     projectState.messages.push(new HumanMessage(prompt))
     runAgenticManager(userId,projectId,projectState,clients,sdx);
     // const result = await agent.invoke(projectState)
@@ -342,51 +326,6 @@ const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
   }
 
 }
-
-//   const hasObj =   activeSanbox.has(projectId);
-//   console.log("do we already have this sandbox",hasObj)
-//   if (!hasObj){
-//     const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
-//       timeoutMs: 120_000,
-//       // timeoutMs:1800_000,
-//     })
-//     const info = await sdx.getInfo()
-//     console.log("created new sandbox",info.sandboxId);
-//     activeSanbox.set(projectId,{
-//       sandboxId:info.sandboxId,
-//           sandboxInitTime: Date.now()
-//         })
-//         return info.sandboxId;       
-//       }
-      
-//       const project = activeSanbox.get(projectId);
-//       const startTime = Number(project?.sandboxInitTime)
-//       const id = project?.sandboxId
-//       // console.log("sandbox in objet",Object.keys(sandbox)[0])
-      
-//       const currentTime = Date.now()
-//       if (currentTime - startTime > 1800_000){
-//         activeSanbox.delete(projectId);
-//         const sdx = await Sandbox.create(process.env.E2B_SANDBOX_TEMPLATE!,{
-//           timeoutMs: SANDBOX_TIMEOUT,
-//           // timeoutMs:1800_000,
-//         })
-
-//         const info = await sdx.getInfo();
-//         activeSanbox.set(projectId,{
-//           sandboxId:info.sandboxId,
-//           sandboxInitTime: Date.now() 
-//         })
-
-//         console.log("created new based on exisiting time time-passed:",`${currentTime - startTime}`,info.sandboxId);
-//         return info.sandboxId;
-//       }
-      
-//       return id;
-// }
-
-// const sandboxId = await getSandboxId("projectId")
-// console.log("retrived data",sandboxId)
 
 wss.on("connection", (ws, req) => {
   const params = new URLSearchParams(req.url.replace("/?", ""));

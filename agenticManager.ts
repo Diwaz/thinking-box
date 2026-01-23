@@ -8,7 +8,7 @@ import { type BaseMessage } from "@langchain/core/messages";
 import { isAIMessage, ToolMessage } from "@langchain/core/messages";
 import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
-import { SYSTEM_PROMPT } from "./prompt";
+import {  FINAL_AI_RESPONSE_SYSTEM_PROMPT, SUMMARIZER_PROMPT, SYSTEM_PROMPT } from "./prompt";
 import type Sandbox from "@e2b/code-interpreter";
 import { backupDataToBucket, uploadDir } from "./bucketManager";
 import { getFiles } from ".";
@@ -16,6 +16,7 @@ import { secureCommand } from "./guardrails";
 import { PrismaClient } from "./generated/prisma";
 import { ConversationType } from "./generated/prisma";
 import { MessageFrom } from "./generated/prisma";
+import { appendFile } from "fs/promises";
 
 
 const prisma = new PrismaClient();
@@ -24,14 +25,15 @@ const prisma = new PrismaClient();
 
 const MessageState = z.object({
   messages: z.array(z.custom<BaseMessage>()).register(registry, MessagesZodMeta),
-  llmCalls: z.number().optional()
+  llmCalls: z.number().optional(),
+  hasSummazied: z.boolean().default(false)
 })
 
 type State = z.infer<typeof MessageState>;
 
 
 export async function runAgenticManager(userId:string,projectId:string,state:State,clients:Map<string,WebSocket>,sdx:Sandbox){
-
+  state.hasSummazied = false;
 const llm = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash-lite",
 });
@@ -111,15 +113,34 @@ async function llmCall(state: State) {
     console.log("1st LLM CALLLLLLLL")
  send({
       action: "LLM_UPDATE",
-      message:"Analyzing query"
+      message:"Evaluating Results"
     })
+let dynamicPrompt = SYSTEM_PROMPT;
+const contextFile = await Bun.file(`./Context/${projectId}.md`)
+if (await contextFile.exists()){
+  console.log("retrieved context")
+    dynamicPrompt = `
+     ## CONTEXT FROM PREVIOUS CONVERSATION:
+     ${SUMMARIZER_PROMPT}
+
+## IMPORTANT:
+    The above context contains the COMPLETE current state of all files. When the user asks for changes:
+    1. Read the current code from the context above
+    2. Make ONLY the specific changes requested
+    3. Keep everything else exactly the same
+    4. Use create_file to write the COMPLETE updated file (not just the changed parts)
+
+    The user is now making a follow-up request below.
+      ${SYSTEM_PROMPT}    `
+  }
   const llmResponse = await llmWithTools.invoke([
-    new SystemMessage(SYSTEM_PROMPT),
+    new SystemMessage(dynamicPrompt),
     ...state.messages
   ])
-
+  
   const newCallCount = state.llmCalls + 1
   console.log("state of llmCall",llmResponse.content)
+  // state.messages.push(llmResponse.content)
   return {
     messages: [...state.messages, llmResponse],
     llmCalls: newCallCount,
@@ -142,6 +163,7 @@ async function toolNode(state: State) {
       if (!tool) continue;
       const observation = await tool.invoke(toolCall);
       console.log("tool msg",observation["content"])
+      // state.messages.push(observation["content"])
          send({
       action: "LLM_UPDATE",
       message:"Using Tools"
@@ -160,6 +182,72 @@ async function toolNode(state: State) {
   }
 
 }
+async function summazingNode(state:State){
+
+    const llmSummaryResponse = await llm.invoke([
+    new SystemMessage(SUMMARIZER_PROMPT),
+    ...state.messages
+  ])
+
+  try {
+    let summary:string="";
+    if (Array.isArray(llmSummaryResponse["content"])){
+      llmSummaryResponse["content"].map((part)=>{
+        summary = summary + part["text"];
+      })
+    }else if (typeof(llmSummaryResponse["content"])==="object"){
+      summary = summary + llmSummaryResponse["content"]["text"];
+    }else{
+      summary = summary + llmSummaryResponse["content"];
+    }
+    
+    console.log("SUMMARY variable",summary)
+    console.log("SUMMARY raw",llmSummaryResponse)
+
+    const file =Bun.file(`./Context/${projectId}`)
+    
+    if (await file.exists()){
+      await appendFile(`./Context/${projectId}.md`,summary);
+    }else{
+      await Bun.write(`./Context/${projectId}.md`,summary);
+
+    }
+    state.hasSummazied = true;
+    return {
+      messages: [...state.messages, summary]
+    }
+
+  }catch(err){
+    console.log("Error while saving file");
+    state.hasSummazied = false;
+    return {
+      messages:[...state.messages,'SUMMARY FAILED']
+    }
+    
+  }
+}
+
+async function finalNode(state:State){
+
+try {
+  const llmFinalResponse = await llm.invoke([
+    new SystemMessage(FINAL_AI_RESPONSE_SYSTEM_PROMPT),
+    ...state.messages
+  ])
+  
+  return {
+    messages: [...state.messages,llmFinalResponse["content"]]
+  }
+}catch(err){
+  return {
+    messages: [...state.messages,"ERROR GENERATING FINAL RESPONSE"]
+  }
+}
+
+
+
+
+}
 async function shouldContinue(state: State) {
   const lastMessage = state.messages.at(-1);
   if (lastMessage == null || !isAIMessage(lastMessage)) {
@@ -169,15 +257,22 @@ async function shouldContinue(state: State) {
   if (lastMessage.tool_calls?.length) {
     return "toolNode";
   }
+  if (!state.hasSummazied){
+    return "summarizer";
+  }
   return END;
 }
 
 const agent = new StateGraph(MessageState)
   .addNode("llmCall", llmCall)
   .addNode("toolNode", toolNode)
+  .addNode("summarizer", summazingNode)
+  .addNode("finalNode", finalNode)
   .addEdge(START, "llmCall")
-  .addConditionalEdges("llmCall", shouldContinue, ["toolNode", END])
+  .addConditionalEdges("llmCall", shouldContinue, ["toolNode","summarizer", END])
   .addEdge("toolNode", "llmCall")
+  .addEdge("summarizer", "finalNode")
+  .addEdge("finalNode",END)
   .compile();
 
     const ws = clients.get(userId);
@@ -195,17 +290,13 @@ const agent = new StateGraph(MessageState)
       message:"Agent started"
     })
     const result = await agent.invoke(state)
+    // console.log("RESULT messages",result.messages)
+    
     // start to upload to s3
     console.log("last AI MSG",result.messages.at(-1).content);
     const lastMessage = result.messages.at(-1).content;
 
-    if (typeof(lastMessage)==="string"){
-
-    send({
-      action: "LLM_UPDATE",
-      message:lastMessage
-    })
-    }
+ 
 
     const isBackup = await backupDataToBucket(sdx,userId,projectId); 
     if (isBackup){
@@ -215,8 +306,14 @@ const agent = new StateGraph(MessageState)
         files
       })
     }
+   if (typeof(lastMessage)==="string"){
 
-  await prisma.conversationHistory.create({
+    send({
+      action: "LLM_UPDATE",
+      message:lastMessage
+    })
+    try {
+       await prisma.conversationHistory.create({
     data:{
       projectId,
       type: ConversationType.TEXT_MESSAGE,
@@ -224,6 +321,11 @@ const agent = new StateGraph(MessageState)
       contents: lastMessage
     }
   })
+    }catch(err){
+      console.log("Error while saving to db",err)
+    }
+    }
+ 
 
     console.log("LLM Done")
 

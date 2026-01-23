@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import AiMsgBox from '@/components/aiMessageBox';
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 
-enum From {
+export enum From {
   USER,
   ASSISTANT
 }
@@ -214,7 +214,7 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
       />
       <AvatarFallback>CN</AvatarFallback>
     </Avatar>
-            <div className='bg-[#1F1F1F]  w-[80%] lg:w-[40%] flex justify-end p-4 rounded-sm'>
+            <div className='bg-[#1F1F1F]  flex justify-end p-4 rounded-lg'>
 
           {item.content}
             </div>
@@ -240,7 +240,7 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
                  
                     </div> 
                 <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]  '>
-                    <AIInput type="secondary" projectId={id} userId={'a770b0b5-2bdc-49e3-9795-f887703803fa'} changeFileState={setFileTree}/>
+                    <AIInput type="secondary" projectId={id} userId={'a770b0b5-2bdc-49e3-9795-f887703803fa'} changeFileState={setFileTree} setMessages={setMessages}/>
                 </div>
             </div>
             <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm h-full  flex-col ">

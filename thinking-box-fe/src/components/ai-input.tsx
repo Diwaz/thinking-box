@@ -7,8 +7,19 @@ import { Plus, Paperclip, Globe, Lock, Mic, ArrowUp } from "lucide-react"
 import { useRouter } from "next/navigation"
 import handleRequest from "@/utils/request"
 import { FileNode } from "./fileTree"
+import { From, MessagePacket } from "@/app/project/[id]/page"
 
-export function AIInput({type,projectId,userId,changeFileState}:{type:string,projectId?:string,userId?:string,changeFileState:(file: FileNode[])=> void}) {
+
+type InputProps = {
+  type: string,
+  projectId?: string,
+  userId?:string,
+  changeFileState: React.Dispatch<React.SetStateAction<FileNode[]>>,
+  setMessages: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
+}
+
+
+export function AIInput({type,projectId,userId,changeFileState,setMessages}:InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
   const [isPublic, setIsPublic] = useState(true)
@@ -37,7 +48,13 @@ export function AIInput({type,projectId,userId,changeFileState}:{type:string,pro
         userId,
       }
         }
-
+        setMessages(prev => [...prev,
+          {
+            content: value,
+            from:From.USER 
+          }
+        ]); 
+        setValue(""); 
       await handleRequest("POST","http://localhost:8080/prompt",options)    
       // console.log("cleared session storage")
       sessionStorage.removeItem(`project_tree_${projectId}`)
