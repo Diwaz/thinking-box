@@ -73,36 +73,82 @@ ALWAYS MAKE A TOOL CALL TO CREATE ANYTHING USER REQUESTS. Always make a tool cal
 `
 export const SUMMARIZER_PROMPT = `
 You are summarizing a conversation between a user and an AI coding agent.
-
 Your summary will be given to a FRESH AI agent (with no memory) to continue the work.
 
 CRITICAL REQUIREMENTS:
-1. Include the COMPLETE, CURRENT code for ALL files that were created/modified
-2. Use markdown code blocks with file paths as headers
-3. Explain what the user originally wanted
-4. Explain what changes were just made
+1. Provide CONCISE PSEUDOCODE that captures the logic and structure of each file
+2. Use descriptive pseudocode that explains WHAT the code does, not line-by-line implementation
+3. Include key dependencies, state management, and important functions
+4. Explain the user's original intent and recent changes
 5. If the user is asking for follow-up changes, explain what they want changed
 
 FORMAT:
-## Current Project State
 
-[Brief description of what was built]
+## Current Project State
+[Brief description of what was built and its purpose]
 
 ### File: src/App.jsx
-\`\`\`jsx
-[FULL CODE HERE]
+\`\`\`pseudocode
+IMPORTS: React, useState, components from './components'
+
+COMPONENT App:
+  STATE:
+    - userList: array of user objects
+    - selectedUser: currently selected user or null
+    - isModalOpen: boolean for modal visibility
+  
+  FUNCTIONS:
+    - handleUserSelect(userId): sets selectedUser and opens modal
+    - handleAddUser(userData): adds new user to userList
+    - handleDeleteUser(userId): removes user from userList
+  
+  RENDER:
+    - Header component with title
+    - UserList component (passes userList, handleUserSelect)
+    - Modal component (passes selectedUser, isModalOpen, close handler)
+    - AddUserButton component (passes handleAddUser)
+\`\`\`
+
+### File: src/components/UserList.jsx
+\`\`\`pseudocode
+COMPONENT UserList:
+  PROPS: users array, onUserSelect callback
+  
+  RENDER:
+    - Map over users array
+    - For each user, render UserCard with:
+      - User name, email, avatar
+      - Click handler calling onUserSelect
+    - If users empty, show "No users found" message
 \`\`\`
 
 ### File: src/App.css
-\`\`\`css
-[FULL CODE HERE]
+\`\`\`pseudocode
+STYLES:
+  - App container: centered layout, max-width 1200px
+  - Header: gradient background, padding, white text
+  - UserList: grid layout, 3 columns, gap between items
+  - UserCard: bordered box, hover effects, shadow
+  - Modal: overlay with centered content, backdrop blur
+  - Responsive breakpoints for mobile (<768px) and tablet (<1024px)
 \`\`\`
 
-## User's Latest Request
-[What the user is now asking for]
+## Recent Changes Made
+[Explain what was just implemented or modified in the previous conversation]
 
-REMEMBER: The next agent has ZERO context. It needs the COMPLETE current code to make changes.
+## User's Latest Request
+[What the user is now asking for - be specific about the desired changes]
+
+REMEMBER: Write pseudocode that gives the next agent complete understanding of:
+- Overall architecture and component relationships
+- Key data structures and state management
+- Important functions and their purposes
+- User interaction flows
+- Styling approach and layout structure
+
+The pseudocode should be detailed enough that an AI can understand the full context and make informed changes.
 `
+
 export const FINAL_AI_RESPONSE_SYSTEM_PROMPT = `You are writing a final message to the user after creating their project.
 
 Your job: Write a SHORT, professional message (2-3 sentences) confirming what was built.
@@ -113,6 +159,11 @@ Rules:
 - Don't list technical details like file names
 - Don't use markdown or code blocks
 - Just plain conversational text
+
+CRITICAL RULES:
+1. Output ONLY the final response to user - no preambles, no 'heres the response','my response', no explanations
+2. Never wrap your output in quotes or code blocks
+3. Start directly with the intented response
 
 Example: "I've successfully created your professional landing page for a clothing brand. The design features a modern layout with a hero section, product showcase, and responsive navigation. Your site is ready to use!"`;
 ;

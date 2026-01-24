@@ -33,7 +33,12 @@ const prisma = new PrismaClient();
 
 const MessageState = z.object({
   messages: z.array(z.custom<BaseMessage>()).register(registry, MessagesZodMeta),
-  llmCalls: z.number().optional()
+  llmCalls: z.number().optional(),
+  hasSummazied: z.boolean().default(false),
+  generatedFiles: z.array(z.object({
+      fileName: z.string(),
+      content: z.string(),
+  }))
 })
 
 
@@ -208,7 +213,10 @@ app.post("/prompt",async (req,res)=>{
       globalStore.set(userId,new Map());
       globalStore.get(userId)?.set(projectId,{
         messages:[],
-        llmCalls:0
+        llmCalls:0,
+        hasSummazied: false,
+        generatedFiles:[],
+
       });
     }
 

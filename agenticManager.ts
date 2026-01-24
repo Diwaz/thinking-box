@@ -4,7 +4,7 @@ import * as z from "zod";
 import { StateGraph, START, END, Command } from "@langchain/langgraph";
 import { MessagesZodMeta } from "@langchain/langgraph";
 import { registry } from "@langchain/langgraph/zod";
-import { type BaseMessage } from "@langchain/core/messages";
+import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import { isAIMessage, ToolMessage } from "@langchain/core/messages";
 import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
@@ -26,7 +26,11 @@ const prisma = new PrismaClient();
 const MessageState = z.object({
   messages: z.array(z.custom<BaseMessage>()).register(registry, MessagesZodMeta),
   llmCalls: z.number().optional(),
-  hasSummazied: z.boolean().default(false)
+  hasSummazied: z.boolean().default(false),
+  generatedFiles: z.array(z.object({
+      fileName: z.string(),
+      content: z.string(),
+  }))
 })
 
 type State = z.infer<typeof MessageState>;
@@ -35,7 +39,7 @@ type State = z.infer<typeof MessageState>;
 export async function runAgenticManager(userId:string,projectId:string,state:State,clients:Map<string,WebSocket>,sdx:Sandbox){
   state.hasSummazied = false;
 const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash-lite",
+  model: "gemini-2.5-flash",
 });
 
 
@@ -44,18 +48,27 @@ const createfile = tool(
     // const file = Bun.file(filePath);
     try {
       await sdx.files.write(filePath,content);
+      // state.generatedFiles.push({
+      //   fileName: filePath,
+      //   content
+      // })
        send({
       action: "LLM_UPDATE",
       message:"Creating File"
     })
-      return `File created successfully at ${filePath}`
+      return JSON.stringify({
+        success: true,
+        filePath,
+        content,
+        message:`File created at ${filePath}`
+      })
 
     }catch(err){
       return `Unable to create file error: ${err}`
     }
 
   }, {
-  name: "creates_new_file",
+  name: "create_new_file",
   description: "Creates new file and adds content to it",
   schema: z.object({
     filePath: z.string().describe("File path of the origin of the file"),
@@ -118,10 +131,11 @@ async function llmCall(state: State) {
 let dynamicPrompt = SYSTEM_PROMPT;
 const contextFile = await Bun.file(`./Context/${projectId}.md`)
 if (await contextFile.exists()){
+
   console.log("retrieved context")
     dynamicPrompt = `
      ## CONTEXT FROM PREVIOUS CONVERSATION:
-     ${SUMMARIZER_PROMPT}
+     ${await contextFile.text()}
 
 ## IMPORTANT:
     The above context contains the COMPLETE current state of all files. When the user asks for changes:
@@ -155,15 +169,31 @@ async function toolNode(state: State) {
   if (lastMessage == null || !isAIMessage(lastMessage)) {
     return {
       messages: [],
+      generatedFiles: state.generatedFiles
     }
   }
+
   const result: ToolMessage[] = [];
+  const newGeneratedFiles = [...state.generatedFiles];
   for (const toolCall of lastMessage.tool_calls ?? []) {
       const tool = toolsByName[toolCall.name];
       if (!tool) continue;
       const observation = await tool.invoke(toolCall);
       console.log("tool msg",observation["content"])
-      // state.messages.push(observation["content"])
+
+      if (toolCall.name === "create_new_file"){
+        try {
+          const result = JSON.parse(observation["content"]);
+          if (result.success){
+            newGeneratedFiles.push({
+              fileName: result.filePath,
+              content: result.content
+            })
+          }
+        }catch(e){
+          console.log("error parsing ?",e)
+        }
+      }
          send({
       action: "LLM_UPDATE",
       message:"Using Tools"
@@ -178,17 +208,29 @@ async function toolNode(state: State) {
   }
 
   return {
-    messages: result
+    messages: result,
+    generatedFiles: newGeneratedFiles
   }
 
 }
+
 async function summazingNode(state:State){
 
+const codeSummary = state.generatedFiles;
+console.log("summarizer problemo?",codeSummary)
+    let rawCode:string =""
+    if (codeSummary.length > 0){
+      rawCode = codeSummary.map((item)=>{
+        return `###FileName  ${item.fileName} \n\n ##CODE## ${item.content} \n\n`
+      }).join("\n\n")
+    }
+    console.log("RAW CODE",rawCode)
     const llmSummaryResponse = await llm.invoke([
     new SystemMessage(SUMMARIZER_PROMPT),
     ...state.messages
   ])
 
+    
   try {
     let summary:string="";
     if (Array.isArray(llmSummaryResponse["content"])){
@@ -202,26 +244,28 @@ async function summazingNode(state:State){
     }
     
     console.log("SUMMARY variable",summary)
-    console.log("SUMMARY raw",llmSummaryResponse)
+    // console.log("SUMMARY raw",llmSummaryResponse)
 
-    const file =Bun.file(`./Context/${projectId}`)
+    const file =Bun.file(`./Context/${projectId}.md`)
     
     if (await file.exists()){
-      await appendFile(`./Context/${projectId}.md`,summary);
+      await appendFile(`./Context/${projectId}.md`,`\n\n----\n${summary}`);
+      await appendFile(`./Context/${projectId}.md`,`\n\n----\n${rawCode}`)
     }else{
       await Bun.write(`./Context/${projectId}.md`,summary);
-
+      await appendFile(`./Context/${projectId}.md`,`\n\n----\n${rawCode}`)
     }
     state.hasSummazied = true;
+    state.generatedFiles = [];
     return {
-      messages: [...state.messages, summary]
+      messages: state.messages
     }
 
   }catch(err){
     console.log("Error while saving file");
     state.hasSummazied = false;
     return {
-      messages:[...state.messages,'SUMMARY FAILED']
+      messages:[...state.messages,new SystemMessage('SUMMARY FAILED')]
     }
     
   }
@@ -230,13 +274,21 @@ async function summazingNode(state:State){
 async function finalNode(state:State){
 
 try {
-  const llmFinalResponse = await llm.invoke([
-    new SystemMessage(FINAL_AI_RESPONSE_SYSTEM_PROMPT),
-    ...state.messages
-  ])
+
+  const conversationMessages = state.messages.filter(
+      msg => msg._getType() === 'human' || msg._getType() === 'ai'
+    );
+
+  // const llmFinalResponse = await llm.invoke([
+  //   new SystemMessage(FINAL_AI_RESPONSE_SYSTEM_PROMPT),
+  //   ...conversationMessages
+  // ])
+  const llmFinalResponse = {
+    content: "This is final Response"
+  }
   
   return {
-    messages: [...state.messages,llmFinalResponse["content"]]
+    messages: [...state.messages,new AIMessage(llmFinalResponse["content"])]
   }
 }catch(err){
   return {
