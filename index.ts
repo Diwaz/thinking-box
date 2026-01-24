@@ -136,7 +136,11 @@ app.get("/project/:id",async(req,res)=>{
         title:true,
         initialPrompt:true,
         userId:true,
-        conversationHistory:true
+        conversationHistory:{
+          orderBy:{
+            createdAt: "asc"
+          }
+        }
       }
     })
     res.status(200).json(projectData);

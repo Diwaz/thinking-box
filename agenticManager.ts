@@ -10,7 +10,7 @@ import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
 import {  FINAL_AI_RESPONSE_SYSTEM_PROMPT, SUMMARIZER_PROMPT, SYSTEM_PROMPT } from "./prompt";
 import type Sandbox from "@e2b/code-interpreter";
-import { backupDataToBucket, uploadDir } from "./bucketManager";
+import { backupDataToBucket } from "./bucketManager";
 import { getFiles } from ".";
 import { secureCommand } from "./guardrails";
 import { PrismaClient } from "./generated/prisma";
@@ -217,7 +217,7 @@ async function toolNode(state: State) {
 async function summazingNode(state:State){
 
 const codeSummary = state.generatedFiles;
-console.log("summarizer problemo?",codeSummary)
+// console.log("summarizer problemo?",codeSummary)
     let rawCode:string =""
     if (codeSummary.length > 0){
       rawCode = codeSummary.map((item)=>{
@@ -256,9 +256,9 @@ console.log("summarizer problemo?",codeSummary)
       await appendFile(`./Context/${projectId}.md`,`\n\n----\n${rawCode}`)
     }
     state.hasSummazied = true;
-    state.generatedFiles = [];
     return {
-      messages: state.messages
+      messages: state.messages,
+      generatedFile:  [],
     }
 
   }catch(err){
