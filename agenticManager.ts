@@ -30,7 +30,9 @@ const MessageState = z.object({
   generatedFiles: z.array(z.object({
       fileName: z.string(),
       content: z.string(),
-  }))
+  })),
+  hasValidated: z.boolean().default(false),
+  errors: z.array(z.string()).optional(),
 })
 
 type State = z.infer<typeof MessageState>;
@@ -213,8 +215,116 @@ async function toolNode(state: State) {
   }
 
 }
+async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
+  const errors: string[]=[]
 
-async function summazingNode(state:State){
+  try {
+
+    // 1st phase to check ai not using tool_call to write msg
+    const recentAIMessages = state.messages.filter(msg=> isAIMessage(msg));
+    for (const aiMsg of recentAIMessages){
+        if (!aiMsg.tool_calls || aiMsg.tool_calls.length === 0){
+            const content = typeof aiMsg.content === "string" ? aiMsg.content : "";
+            const hasCodeBlock = content.match(/```(javascript|typescript|jsx|tsx|html|css|json)[\s\S]*?```/g);
+            if (hasCodeBlock && hasCodeBlock.length >0){
+              console.log("TOOL CALL was not used");
+              errors.push("Code was shown but create_new_file tool was not used - files not saved");
+              break;
+            }
+        }
+    }
+
+    // phase 2 to verify there are no error on preview url 
+    try {
+
+    const uri = sdx.getHost(5173);
+    const previewUrl = `https://${uri}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(()=>controller.abort(),3000);
+
+    const resposne = await fetch(previewUrl,{
+      signal:controller.signal
+    });
+    clearTimeout(timeoutId);
+    
+    const body = await resposne.text();
+
+    console.log("response from html",body.length)
+
+    // checking error patterns in the preview page
+   const errorPatterns = [
+        "Failed to fetch dynamically imported module",
+        "500 Internal Server Error",
+        "Cannot GET",
+        "404",
+        "Module not found",
+        "Failed to resolve import",
+        "Unexpected token",
+        "SyntaxError",
+        "ReferenceError",
+        "is not defined",
+        "Cannot read propert",
+        "undefined is not",
+        "ENOENT",
+        "[vite] Internal server error"
+      ];
+      
+      const hasError = errorPatterns.some(pattern => body.includes(pattern));
+      if (hasError){
+        errors.push("Preview shows error - check console for details");
+      }
+      
+      // checking if the fileSize is very small
+
+    }catch(err){
+      console.log("error while checkig preview url",err)
+    }
+    
+
+
+
+
+
+  }catch(err){
+    console.log("error while checking error",err)
+  }
+
+
+
+
+
+
+
+
+  return errors
+}
+async function validationNode(state:State){
+   const errors = await checkForErrors(sdx,state);
+
+    if (errors.length >0){
+      console.log("validation errors",errors);
+
+      send({
+        action:"VALIDATION_ERRORS",
+        message:"RESOLVING ERROR"
+      })
+    }
+
+    return {
+      messages: state.messages,
+      hasValidated: true,
+    }
+}
+// dummy summarizing node 
+async function summarizingNodeDummy(state:State){
+  console.log("summarizing");
+  return {
+    messages: state.messages,
+    hasSummarized: true,
+  }
+}
+
+async function summarizingNode(state:State){
 
 const codeSummary = state.generatedFiles;
 // console.log("summarizer problemo?",codeSummary)
@@ -255,17 +365,19 @@ const codeSummary = state.generatedFiles;
       await Bun.write(`./Context/${projectId}.md`,summary);
       await appendFile(`./Context/${projectId}.md`,`\n\n----\n${rawCode}`)
     }
-    state.hasSummazied = true;
+    // state.hasSummazied = true;
     return {
       messages: state.messages,
       generatedFile:  [],
+      hasSummarized: true,
     }
 
   }catch(err){
     console.log("Error while saving file");
     state.hasSummazied = false;
     return {
-      messages:[...state.messages,new SystemMessage('SUMMARY FAILED')]
+      messages:[...state.messages,new SystemMessage('SUMMARY FAILED')],
+      hansSummarized: false,
     }
     
   }
@@ -309,6 +421,9 @@ async function shouldContinue(state: State) {
   if (lastMessage.tool_calls?.length) {
     return "toolNode";
   }
+  if (!state.hasValidated){
+    return "validationNode"
+  }
   if (!state.hasSummazied){
     return "summarizer";
   }
@@ -318,11 +433,13 @@ async function shouldContinue(state: State) {
 const agent = new StateGraph(MessageState)
   .addNode("llmCall", llmCall)
   .addNode("toolNode", toolNode)
-  .addNode("summarizer", summazingNode)
+  .addNode("summarizer", summarizingNodeDummy)
   .addNode("finalNode", finalNode)
+  .addNode("validationNode", validationNode)
   .addEdge(START, "llmCall")
-  .addConditionalEdges("llmCall", shouldContinue, ["toolNode","summarizer", END])
+  .addConditionalEdges("llmCall", shouldContinue, ["toolNode","summarizer","validationNode", END])
   .addEdge("toolNode", "llmCall")
+  .addEdge("validationNode", "summarizer")
   .addEdge("summarizer", "finalNode")
   .addEdge("finalNode",END)
   .compile();

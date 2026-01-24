@@ -38,7 +38,9 @@ const MessageState = z.object({
   generatedFiles: z.array(z.object({
       fileName: z.string(),
       content: z.string(),
-  }))
+  })),
+  hasValidated: z.boolean().default(false),
+  errors: z.array(z.string()).optional(),
 })
 
 
@@ -200,10 +202,10 @@ app.get("/project/history/:id",async(req,res)=>{
 
 
 
-const state:State ={
-  messages:[],
-  llmCalls:0,
-}
+// const state:State ={
+//   messages:[],
+//   llmCalls:0,
+// }
 
 app.post("/prompt",async (req,res)=>{
   try {
@@ -220,7 +222,8 @@ app.post("/prompt",async (req,res)=>{
         llmCalls:0,
         hasSummazied: false,
         generatedFiles:[],
-
+        hasValidated: false,
+        errors: [],
       });
     }
 
