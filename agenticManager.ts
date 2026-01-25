@@ -9,7 +9,7 @@ import { isAIMessage, ToolMessage } from "@langchain/core/messages";
 import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
 import {  FINAL_AI_RESPONSE_SYSTEM_PROMPT, SUMMARIZER_PROMPT, SYSTEM_PROMPT } from "./prompt";
-import type Sandbox from "@e2b/code-interpreter";
+import Sandbox from "@e2b/code-interpreter";
 import { backupDataToBucket } from "./bucketManager";
 import { getFiles } from ".";
 import { secureCommand } from "./guardrails";
@@ -25,7 +25,7 @@ const prisma = new PrismaClient();
 
 const MessageState = z.object({
   messages: z.array(z.custom<BaseMessage>()).register(registry, MessagesZodMeta),
-  llmCalls: z.number().optional(),
+  llmCalls: z.number().default(0).optional(),
   hasSummazied: z.boolean().default(false),
   generatedFiles: z.array(z.object({
       fileName: z.string(),
@@ -35,6 +35,17 @@ const MessageState = z.object({
   errors: z.array(z.string()).optional(),
   validationAttempt: z.number().default(0),
 })
+
+const createFileSchema = z.object({
+    filePath: z.string().describe("File path of the origin of the file"),
+    content: z.string().min(1,"cannot be empty - you must provide the actual file content")
+    .describe("content or code to put inside file")
+  })
+
+  const commandSchema = z.object ({
+      command: z.string().describe("shell command to run in bash terminal")
+    })
+
 
 type State = z.infer<typeof MessageState>;
 
@@ -49,15 +60,28 @@ const llm = new ChatGoogleGenerativeAI({
 const createfile = tool(
   async ({ filePath, content }) => {
     // const file = Bun.file(filePath);
+    const result = createFileSchema.safeParse({filePath,content});
+    if (!result.success){
+      return `Unable to create file error : ${result.error}`
+    }
+
     try {
+    let fullPath:string;
+    if (filePath.startsWith('/home/user/')){
+      fullPath = filePath
+    }else if(filePath.startsWith('/')){
+      fullPath= `home/user${filePath}`;
+    }else{
+      fullPath= `home/user/${filePath}`;
+    }
+    const dir = fullPath.slice(0,fullPath.lastIndexOf('/'));
+    await sdx.commands.run(`mkdir -p ${dir}`);
+
       await sdx.files.write(filePath,content);
-      // state.generatedFiles.push({
-      //   fileName: filePath,
-      //   content
-      // })
+
        send({
       action: "LLM_UPDATE",
-      message:"Creating File"
+      message:`Created file ${filePath}`
     })
       return JSON.stringify({
         success: true,
@@ -73,14 +97,16 @@ const createfile = tool(
   }, {
   name: "create_new_file",
   description: "Creates new file and adds content to it",
-  schema: z.object({
-    filePath: z.string().describe("File path of the origin of the file"),
-    content: z.string().describe("content or code to put inside file")
-  })
+  schema:createFileSchema 
 })
 
 const runShellCommands = tool (
   async ({ command }) => {
+    const result = commandSchema.safeParse({command});
+    if (!result.success){
+      return `Command cannot be empty`
+    }
+
  send({
       action: "LLM_UPDATE",
       message:"Running Terminal Command"
@@ -99,16 +125,14 @@ const runShellCommands = tool (
         },
       });
       console.log("cmd:",output);
-      return ` ran this command : ${command} got this :${output}`
+      return ` ran this command : ${command} got this :${output.stderr ? output.stderr : output.stdout}`
     }catch(err){
       return `Command failed error: ${err}`
     }
   },{
     name : "run_shell_command",
     description:"runs the shell command given by AI in the terminal and you can also view the output of the command",
-    schema: z.object ({
-      command: z.string().describe("shell command to run in bash terminal")
-    })
+    schema:commandSchema 
   }
 )
 
@@ -124,15 +148,15 @@ const llmWithTools = llm.bindTools(tools);
 
 
 async function llmCall(state: State) {
-
+  const messageWrapper: BaseMessage[] =[];
   // if (state.llmCalls == 0){
-    console.log("1st LLM CALLLLLLLL")
+    console.log(`${state.llmCalls}th LLM CALLLLLLLL`)
  send({
       action: "LLM_UPDATE",
       message:"Evaluating Results"
     })
 let dynamicPrompt = SYSTEM_PROMPT;
-const contextFile = await Bun.file(`./Context/${projectId}.md`)
+const contextFile =  Bun.file(`./Context/${projectId}.md`)
 if (await contextFile.exists()){
 
   console.log("retrieved context")
@@ -150,13 +174,11 @@ if (await contextFile.exists()){
     The user is now making a follow-up request below.
       ${SYSTEM_PROMPT}    `
   }
-  const llmResponse = await llmWithTools.invoke([
-    new SystemMessage(dynamicPrompt),
-    ...state.messages
-  ])
+  messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
+  const llmResponse = await llmWithTools.invoke(messageWrapper)
   
-  const newCallCount = state.llmCalls + 1
-  console.log("state of llmCall",llmResponse.content)
+  const newCallCount = (state.llmCalls ?? 0) + 1
+  console.log(`result of ${state.llmCalls}`,llmResponse.content)
   // state.messages.push(llmResponse.content)
   return {
     messages: [...state.messages, llmResponse],
@@ -359,14 +381,14 @@ IMMEDIATE ACTIONS REQUIRED:
 
 ${errors.some(e => e.includes('Code was shown but create_new_file')) ? `
 ** CRITICAL: You showed code but didn't save it!
-→ Use create_new_file tool RIGHT NOW for every file you mentioned
-→ File paths must start with /home/user/ (e.g., /home/user/src/App.jsx)
+ Use create_new_file tool RIGHT NOW for every file you mentioned
+ File paths must start with /home/user/ (e.g., /home/user/src/App.jsx)
 ` : ''}
 
 ${errors.some(e => e.includes('Preview shows error')) ? `
 **  The preview has runtime errors!
-→ Check your code for syntax errors, missing imports, or undefined variables
-→ Fix and re-save all affected files using create_new_file
+ Check your code for syntax errors, missing imports, or undefined variables
+ Fix and re-save all affected files using create_new_file
 ` : ''}
       `
     return {
