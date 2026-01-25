@@ -33,6 +33,7 @@ const MessageState = z.object({
   })),
   hasValidated: z.boolean().default(false),
   errors: z.array(z.string()).optional(),
+  validationAttempt: z.number().default(0),
 })
 
 type State = z.infer<typeof MessageState>;
@@ -222,34 +223,49 @@ async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
 
     // 1st phase to check ai not using tool_call to write msg
     const recentAIMessages = state.messages.filter(msg=> isAIMessage(msg));
-    for (const aiMsg of recentAIMessages){
-        if (!aiMsg.tool_calls || aiMsg.tool_calls.length === 0){
-            const content = typeof aiMsg.content === "string" ? aiMsg.content : "";
-            const hasCodeBlock = content.match(/```(javascript|typescript|jsx|tsx|html|css|json)[\s\S]*?```/g);
-            if (hasCodeBlock && hasCodeBlock.length >0){
-              console.log("TOOL CALL was not used");
-              errors.push("Code was shown but create_new_file tool was not used - files not saved");
-              break;
-            }
-        }
-    }
+    for (const aiMsg of recentAIMessages) {
+  // Skip if this message has tool calls - it's already using tools
+  if (aiMsg.tool_calls && aiMsg.tool_calls.length > 0) {
+    continue;
+  }
+  
+  // Only check messages without tool calls
+  let content = '';
+  
+  if (typeof aiMsg.content === 'string') {
+    content = aiMsg.content;
+  } else if (Array.isArray(aiMsg.content)) {
+    content = aiMsg.content
+      .filter(item => item && typeof item === 'object' && 'text' in item)
+      .map(item => item.text)
+      .join('\n');
+  }
+  
+  const hasCodeBlock = content.match(/```(javascript|typescript|jsx|tsx|html|css|json)[\s\S]*?```/g);
+  if (hasCodeBlock && hasCodeBlock.length > 0) {
+    console.log("VALIDATION ERROR: Code shown but create_new_file tool was not used");
+    errors.push("Code was shown but create_new_file tool was not used - files not saved");
+    break;
+  }
+}
 
     // phase 2 to verify there are no error on preview url 
     try {
 
     const uri = sdx.getHost(5173);
-    const previewUrl = `https://${uri}`;
+    await new Promise(r=>setTimeout(r,1000));
+    const previewUrl = `https://${uri}/src/App.jsx?t=${Date.now()}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(()=>controller.abort(),3000);
 
-    const resposne = await fetch(previewUrl,{
+    const response = await fetch(previewUrl,{
       signal:controller.signal
     });
     clearTimeout(timeoutId);
     
-    const body = await resposne.text();
+    const body = await response.text();
 
-    console.log("response from html",body.length)
+    console.log("response from html",body)
 
     // checking error patterns in the preview page
    const errorPatterns = [
@@ -266,7 +282,9 @@ async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
         "Cannot read propert",
         "undefined is not",
         "ENOENT",
-        "[vite] Internal server error"
+        "[vite] Internal server error",
+        "TypeError",
+        "[plugin:vite",
       ];
       
       const hasError = errorPatterns.some(pattern => body.includes(pattern));
@@ -275,10 +293,21 @@ async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
       }
       
       // checking if the fileSize is very small
+       if (response.ok && body.length < 100 && !body.includes("<!DOCTYPE")) {
+        errors.push("Preview returned empty or minimal content");
+      }
 
-    }catch(err){
+
+    }catch(err:any){
       console.log("error while checkig preview url",err)
+       if (err.name === 'AbortError') {
+        errors.push("Preview URL timeout - server may be unresponsive");
+      } else {
+        errors.push(`Cannot reach preview URL: ${err.message}`);
+      }
     }
+
+
     
 
 
@@ -299,20 +328,80 @@ async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
   return errors
 }
 async function validationNode(state:State){
+  
+  const currentAttempts = state.validationAttempt || 0;
+  send({
+   action:"LLM_UPDATE",
+   message:"Validating Code"
+ })    
+
    const errors = await checkForErrors(sdx,state);
+
 
     if (errors.length >0){
       console.log("validation errors",errors);
 
       send({
-        action:"VALIDATION_ERRORS",
+        action:"LLM_UPDATE",
         message:"RESOLVING ERROR"
       })
+
+      if (currentAttempts >= 2){
+        console.log("Max validation attempts reached , proceeding anyway");
+
+       send({
+        action: "LLM_UPDATE",
+        message: " Validation completed with warnings"
+      });
+      return {
+        messages: state.messages,
+        hasValidated:true,
+        errors,
+        validationAttempt: currentAttempts + 1
+
+      }  
+      }
+
+      const reportingFromValidationNode = `
+      VALIDATION FAILED (Attempt ${currentAttempts + 1}/2):
+
+Errors detected:
+${errors.map((err, i) => `${i + 1}. ${err}`).join('\n')}
+
+IMMEDIATE ACTIONS REQUIRED:
+
+${errors.some(e => e.includes('Code was shown but create_new_file')) ? `
+** CRITICAL: You showed code but didn't save it!
+→ Use create_new_file tool RIGHT NOW for every file you mentioned
+→ File paths must start with /home/user/ (e.g., /home/user/src/App.jsx)
+` : ''}
+
+${errors.some(e => e.includes('Preview shows error')) ? `
+**  The preview has runtime errors!
+→ Check your code for syntax errors, missing imports, or undefined variables
+→ Fix and re-save all affected files using create_new_file
+` : ''}
+      `
+    return {
+      messages: [...state.messages, new SystemMessage(reportingFromValidationNode)],
+      hasValidated: false,
+      errors,
+      validationAttempt:currentAttempts + 1
     }
+    }
+
+    // Validation passed state
+  console.log("Validation successful!");
+  send({
+    action: "LLM_UPDATE",
+    message: "File validated successfully"
+  });
 
     return {
       messages: state.messages,
       hasValidated: true,
+      errors:[],
+      validationAttempt: currentAttempts
     }
 }
 // dummy summarizing node 
@@ -395,8 +484,9 @@ try {
   //   new SystemMessage(FINAL_AI_RESPONSE_SYSTEM_PROMPT),
   //   ...conversationMessages
   // ])
+  const lastMessage = state.messages.at(-1);
   const llmFinalResponse = {
-    content: "This is final Response"
+    content: lastMessage!["content"] ?? "Final Resp"
   }
   
   return {

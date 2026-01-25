@@ -41,6 +41,7 @@ const MessageState = z.object({
   })),
   hasValidated: z.boolean().default(false),
   errors: z.array(z.string()).optional(),
+  validationAttempt: z.number().default(0)
 })
 
 
@@ -224,12 +225,25 @@ app.post("/prompt",async (req,res)=>{
         generatedFiles:[],
         hasValidated: false,
         errors: [],
+        validationAttempt:0,
       });
     }
 
     
-    const projectState:State = globalStore.get(userId)?.get(projectId)!;
-    
+    const projectState = globalStore.get(userId);
+    if (!projectState?.has(projectId)){
+      globalStore.get(userId)?.set(projectId,{
+        messages:[],
+        llmCalls:0,
+        hasSummazied: false,
+        generatedFiles:[],
+        hasValidated: false,
+        errors: [],
+        validationAttempt:0,
+      })
+    }
+    const conversationState:State = projectState?.get(projectId)!; 
+      console.log("project state",conversationState)
     const sandboxId = await getSandboxId(projectId);
      if (!sandboxId){
       return res.status(404).json({
@@ -259,8 +273,8 @@ app.post("/prompt",async (req,res)=>{
     })
    } 
     
-    projectState.messages.push(new HumanMessage(prompt))
-    runAgenticManager(userId,projectId,projectState,clients,sdx);
+    conversationState.messages.push(new HumanMessage(prompt))
+    runAgenticManager(userId,projectId,conversationState,clients,sdx);
     // const result = await agent.invoke(projectState)
     
     
