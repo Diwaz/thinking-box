@@ -308,22 +308,9 @@ async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
     }
 
 
-    
-
-
-
-
-
   }catch(err){
     console.log("error while checking error",err)
   }
-
-
-
-
-
-
-
 
   return errors
 }
@@ -383,7 +370,9 @@ ${errors.some(e => e.includes('Preview shows error')) ? `
 ` : ''}
       `
     return {
-      messages: [...state.messages, new SystemMessage(reportingFromValidationNode)],
+      messages: [ new AIMessage(reportingFromValidationNode),
+        ...state.messages
+      ],
       hasValidated: false,
       errors,
       validationAttempt:currentAttempts + 1
@@ -465,7 +454,7 @@ const codeSummary = state.generatedFiles;
     console.log("Error while saving file");
     state.hasSummazied = false;
     return {
-      messages:[...state.messages,new SystemMessage('SUMMARY FAILED')],
+      messages:[new AIMessage('SUMMARY FAILED'),...state.messages],
       hansSummarized: false,
     }
     
@@ -529,7 +518,7 @@ const agent = new StateGraph(MessageState)
   .addEdge(START, "llmCall")
   .addConditionalEdges("llmCall", shouldContinue, ["toolNode","summarizer","validationNode", END])
   .addEdge("toolNode", "llmCall")
-  .addEdge("validationNode", "summarizer")
+  .addEdge("validationNode", "llmCall")
   .addEdge("summarizer", "finalNode")
   .addEdge("finalNode",END)
   .compile();
