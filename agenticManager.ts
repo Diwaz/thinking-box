@@ -326,7 +326,7 @@ async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
     
     const body = await response.text();
 
-    console.log("response from html",body)
+    // console.log("response from html",body)
 
     // checking error patterns in the preview page
    const errorPatterns = [
@@ -545,7 +545,12 @@ function containsInputValidationError(text:string){
 
 async function inputValidation(state:State){
   try {
-    
+    if (conversationState.hasValidPrompt === true){
+         return {
+          messages:state.messages,
+          hasValidPrompt:true,
+      }
+    } 
     const userMessage = state.messages.filter(msg => msg._getType() === "human");
     console.log("user messages",userMessage)
     const llmInputValidation = await llm.invoke([
@@ -554,8 +559,10 @@ async function inputValidation(state:State){
     ])
 
     if (typeof llmInputValidation["content"] === "string"){
+      console.log("llm response of validating prommpt",llmInputValidation["content"]);
       const isValid = containsInputValidationError(llmInputValidation["content"]);
-      if (isValid){
+      console.log("is valid result",isValid);
+      if (!isValid){
         conversationState.hasValidPrompt = true;
          return {
           messages:state.messages,
@@ -577,12 +584,13 @@ async function inputValidation(state:State){
 }
 async function enhancedPromptNode(state:State){
 
-const userMessage = state.messages.filter(msg => msg._getType() === "human");
+const userMessage  = state.messages.filter(msg => msg._getType() === "human");
+
 
  try {
   const enhancedPrompt = await llm.invoke([
       new SystemMessage(PROMPT_ENHANCER_SYSTEM_PROMPT),
-      userMessage
+      ...userMessage
     ])
     if (typeof enhancedPrompt["content"] === "string"){
       conversationState.hasEnhancedPrompt = true
