@@ -8,7 +8,7 @@ import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import { isAIMessage, ToolMessage } from "@langchain/core/messages";
 import { SystemMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
-import {  FINAL_AI_RESPONSE_SYSTEM_PROMPT, SUMMARIZER_PROMPT, SYSTEM_PROMPT } from "./prompt";
+import {  FINAL_AI_RESPONSE_SYSTEM_PROMPT, INPUT_VALIDATION_PROMPT, PROMPT_ENHANCER_SYSTEM_PROMPT, SUMMARIZER_PROMPT, SYSTEM_PROMPT } from "./prompt";
 import Sandbox from "@e2b/code-interpreter";
 import { backupDataToBucket } from "./bucketManager";
 import { getFiles } from ".";
@@ -34,6 +34,8 @@ const MessageState = z.object({
   hasValidated: z.boolean().default(false),
   errors: z.array(z.string()).optional(),
   validationAttempt: z.number().default(0),
+  hasEnhancedPrompt:z.boolean().default(false).optional(), 
+  hasValidPrompt:z.boolean().default(false).optional(),
 })
 
 const createFileSchema = z.object({
@@ -47,13 +49,31 @@ const createFileSchema = z.object({
     })
 
 
+const getNonEmptyAiMsg = (state:State) : string  =>{
+      let fullLastMsg:string='';
+      const lastMessage = state.messages.at(-1);
+      console.log("LETZ SEE tHE FINAL MSG",lastMessage)
+      if (isAIMessage(lastMessage)){
+        if (Array.isArray(lastMessage.content)){
+        fullLastMsg =lastMessage.content.map((part)=>{
+            return part.text
+  }).join("\n")
+        }else{
+          fullLastMsg = lastMessage.content
+        }
+        return fullLastMsg
+      }
+     return "Your request has been completed!"; 
+    }
+
 type State = z.infer<typeof MessageState>;
 
 
-export async function runAgenticManager(userId:string,projectId:string,state:State,clients:Map<string,WebSocket>,sdx:Sandbox){
-  state.hasSummazied = false;
+export async function runAgenticManager(userId:string,projectId:string,conversationState:State,clients:Map<string,WebSocket>,sdx:Sandbox){
+  conversationState.hasSummazied = false;
 const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash",
+  model: "gemini-2.5-flash-lite",
+  
 });
 
 
@@ -151,39 +171,58 @@ async function llmCall(state: State) {
   const messageWrapper: BaseMessage[] =[];
   // if (state.llmCalls == 0){
     console.log(`${state.llmCalls}th LLM CALLLLLLLL`)
- send({
-      action: "LLM_UPDATE",
-      message:"Evaluating Results"
+    console.log("messages till now",state.messages)
+    try {
+      
+      send({
+        action: "LLM_UPDATE",
+        message:"Evaluating Results"
     })
-let dynamicPrompt = SYSTEM_PROMPT;
+    let dynamicPrompt = SYSTEM_PROMPT;
 const contextFile =  Bun.file(`./Context/${projectId}.md`)
 if (await contextFile.exists()){
-
+  
   console.log("retrieved context")
-    dynamicPrompt = `
-     ## CONTEXT FROM PREVIOUS CONVERSATION:
+  dynamicPrompt = `
+  ## CONTEXT FROM PREVIOUS CONVERSATION:
      ${await contextFile.text()}
-
-## IMPORTANT:
+     
+     ## IMPORTANT:
     The above context contains the COMPLETE current state of all files. When the user asks for changes:
     1. Read the current code from the context above
     2. Make ONLY the specific changes requested
     3. Keep everything else exactly the same
     4. Use create_file to write the COMPLETE updated file (not just the changed parts)
-
+    
     The user is now making a follow-up request below.
-      ${SYSTEM_PROMPT}    `
+    ${SYSTEM_PROMPT}    `
   }
+
   messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
   const llmResponse = await llmWithTools.invoke(messageWrapper)
-  
+  if (llmResponse.tool_calls?.length == 0){
+    const messageSegment = llmResponse.content;
+    if (typeof(messageSegment)==="string" && messageSegment.length < 200){
+      send({
+        action:"LLM_UPDATE",
+        message:messageSegment
+      })
+    }
+  } 
   const newCallCount = (state.llmCalls ?? 0) + 1
   console.log(`result of ${state.llmCalls}`,llmResponse.content)
   // state.messages.push(llmResponse.content)
+  
   return {
     messages: [...state.messages, llmResponse],
     llmCalls: newCallCount,
   }
+}catch(err){
+  console.log("Error while llm call",err);
+  return {
+    messages:[...state.messages,new AIMessage("Sorry the LLM is not responding right now try again later")]
+  }
+}
 
 
 }
@@ -204,7 +243,7 @@ async function toolNode(state: State) {
       const tool = toolsByName[toolCall.name];
       if (!tool) continue;
       const observation = await tool.invoke(toolCall);
-      console.log("tool msg",observation["content"])
+      // console.log("tool msg",observation["content"])
 
       if (toolCall.name === "create_new_file"){
         try {
@@ -264,7 +303,7 @@ async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
   }
   
   const hasCodeBlock = content.match(/```(javascript|typescript|jsx|tsx|html|css|json)[\s\S]*?```/g);
-  if (hasCodeBlock && hasCodeBlock.length > 0) {
+  if (hasCodeBlock && hasCodeBlock.length > 0 && state.generatedFiles.length < 1) {
     console.log("VALIDATION ERROR: Code shown but create_new_file tool was not used");
     errors.push("Code was shown but create_new_file tool was not used - files not saved");
     break;
@@ -426,20 +465,30 @@ async function summarizingNodeDummy(state:State){
 
 async function summarizingNode(state:State){
 
-const codeSummary = state.generatedFiles;
-// console.log("summarizer problemo?",codeSummary)
-    let rawCode:string =""
-    if (codeSummary.length > 0){
+
+  let llmSummaryResponse;
+  let rawCode:string =""
+  try {
+  const codeSummary = state.generatedFiles;
+  // console.log("summarizer problemo?",codeSummary)
+  if (codeSummary.length > 0){
       rawCode = codeSummary.map((item)=>{
         return `###FileName  ${item.fileName} \n\n ##CODE## ${item.content} \n\n`
       }).join("\n\n")
     }
-    console.log("RAW CODE",rawCode)
-    const llmSummaryResponse = await llm.invoke([
-    new SystemMessage(SUMMARIZER_PROMPT),
-    ...state.messages
-  ])
-
+    // console.log("RAW CODE",rawCode)
+     llmSummaryResponse = await llm.invoke([
+      new SystemMessage(SUMMARIZER_PROMPT),
+      ...state.messages
+    ])
+    
+  }catch(err){
+    console.log("Error facing while summarizing LLM call");
+    return {
+        messages:[...state.messages,new AIMessage("LLM not working to summaring text")],
+        hasSummaried:true,
+    }
+  }
     
   try {
     let summary:string="";
@@ -453,7 +502,7 @@ const codeSummary = state.generatedFiles;
       summary = summary + llmSummaryResponse["content"];
     }
     
-    console.log("SUMMARY variable",summary)
+    // console.log("SUMMARY variable",summary)
     // console.log("SUMMARY raw",llmSummaryResponse)
 
     const file =Bun.file(`./Context/${projectId}.md`)
@@ -474,31 +523,106 @@ const codeSummary = state.generatedFiles;
 
   }catch(err){
     console.log("Error while saving file");
-    state.hasSummazied = false;
     return {
       messages:[new AIMessage('SUMMARY FAILED'),...state.messages],
-      hansSummarized: false,
+      hansSummarized: true,
     }
     
   }
 }
+function containsInputValidationError(text:string){
+  if (!text || typeof text !== 'string') return false;
+
+  const normalizedText = text.toLowerCase();
+
+  const keywords = ["input","validation","error"];
+
+  const allKeywordPresent = keywords.every(keyword => normalizedText.includes(keyword));
+
+  return allKeywordPresent;
+
+}
+
+async function inputValidation(state:State){
+  try {
+    
+    const userMessage = state.messages.filter(msg => msg._getType() === "human");
+    console.log("user messages",userMessage)
+    const llmInputValidation = await llm.invoke([
+      new SystemMessage(INPUT_VALIDATION_PROMPT),
+      ...userMessage
+    ])
+
+    if (typeof llmInputValidation["content"] === "string"){
+      const isValid = containsInputValidationError(llmInputValidation["content"]);
+      if (isValid){
+        conversationState.hasValidPrompt = true;
+         return {
+          messages:state.messages,
+          hasValidPrompt:true,
+      }
+      }else{
+          send({
+            action:"LLM_UPDATE",
+            message:"Sorry your request cannot be proceed further please input relevant query"
+          })
+      }
+     
+    }
+
+  }catch(err){
+    console.log("LLM not responding while validating input",err)
+    
+  }
+}
+async function enhancedPromptNode(state:State){
+
+const userMessage = state.messages.filter(msg => msg._getType() === "human");
+
+ try {
+  const enhancedPrompt = await llm.invoke([
+      new SystemMessage(PROMPT_ENHANCER_SYSTEM_PROMPT),
+      userMessage
+    ])
+    if (typeof enhancedPrompt["content"] === "string"){
+      conversationState.hasEnhancedPrompt = true
+      return {
+        hasEnhancedPrompt: true,   
+        messages: new AIMessage(enhancedPrompt["content"]) 
+      }
+    }
+ }catch(err){
+
+    console.log("LLM not responding while enhancing input",err)
+ } 
+}
+async function shouldStartBuilding(state:State){
+  if (!state.hasValidPrompt){
+      return END
+  }
+  if (!state.hasEnhancedPrompt){
+    return `enhancedPromptNode`
+  }
+  return 'llmCall';
+}
+
 
 async function finalNode(state:State){
 
 try {
-
+  console.log("reached final node");
   const conversationMessages = state.messages.filter(
       msg => msg._getType() === 'human' || msg._getType() === 'ai'
     );
 
-  // const llmFinalResponse = await llm.invoke([
-  //   new SystemMessage(FINAL_AI_RESPONSE_SYSTEM_PROMPT),
-  //   ...conversationMessages
-  // ])
-  const lastMessage = state.messages.at(-1);
-  const llmFinalResponse = {
-    content: lastMessage!["content"] ?? "Final Resp"
-  }
+  const llmFinalResponse = await llm.invoke([
+    new SystemMessage(FINAL_AI_RESPONSE_SYSTEM_PROMPT),
+    ...conversationMessages
+  ])
+  // const lastMessage = state.messages.at(-1);
+  // const llmFinalResponse = {
+  //   content: lastMessage!["content"] ?? "Final Resp"
+  // }
   
   return {
     messages: [...state.messages,new AIMessage(llmFinalResponse["content"])]
@@ -513,6 +637,15 @@ try {
 
 
 }
+async function isCodeValid(state:State){
+  if (state.hasValidated === true && state.hasSummazied === false){
+    return "summarizer"
+  }
+  if (state.hasValidated === false){
+    return "llmCall"
+  }
+  return "finalNode"
+}
 async function shouldContinue(state: State) {
   const lastMessage = state.messages.at(-1);
   if (lastMessage == null || !isAIMessage(lastMessage)) {
@@ -525,24 +658,31 @@ async function shouldContinue(state: State) {
   if (!state.hasValidated){
     return "validationNode"
   }
-  if (!state.hasSummazied){
-    return "summarizer";
-  }
+  // if (!getNonEmptyAiMsg(state)){
+  //   return "finalNode" 
+  // }
+  // if (!state.hasSummazied){
+  //   return "summarizer";
+  // }
   return END;
 }
 
 const agent = new StateGraph(MessageState)
   .addNode("llmCall", llmCall)
   .addNode("toolNode", toolNode)
-  .addNode("summarizer", summarizingNodeDummy)
+  .addNode("summarizer", summarizingNode)
   .addNode("finalNode", finalNode)
-  .addNode("validationNode", validationNode)
-  .addEdge(START, "llmCall")
-  .addConditionalEdges("llmCall", shouldContinue, ["toolNode","summarizer","validationNode", END])
+  .addNode("validationNode", validationNode) 
+  .addNode("inputValidationNode", inputValidation)
+  .addNode("enhancedPromptNode", enhancedPromptNode)
+  .addEdge(START, "inputValidationNode")
+  .addConditionalEdges("inputValidationNode",shouldStartBuilding,["enhancedPromptNode","llmCall",END])
+  .addConditionalEdges("llmCall", shouldContinue, ["toolNode","validationNode", END])
+  .addConditionalEdges("validationNode", isCodeValid, ["summarizer","llmCall","finalNode"])
+  .addEdge("enhancedPromptNode", "llmCall")
   .addEdge("toolNode", "llmCall")
-  .addEdge("validationNode", "llmCall")
-  .addEdge("summarizer", "finalNode")
-  .addEdge("finalNode",END)
+  .addEdge("summarizer","finalNode")
+  .addEdge("finalNode", END)
   .compile();
 
     const ws = clients.get(userId);
@@ -559,24 +699,27 @@ const agent = new StateGraph(MessageState)
       action: "LLM_UPDATE",
       message:"Agent started"
     })
-    const result = await agent.invoke(state)
+    const result = await agent.invoke(conversationState)
     // console.log("RESULT messages",result.messages)
     
     // start to upload to s3
-    console.log("last AI MSG",result.messages.at(-1).content);
-    const lastMessage = result.messages.at(-1).content;
-
+    // console.log("last AI MSG",result.messages.at(-1).content);
+    // const lastMessage = result.messages.at(-1).content;
+    const lastMessage = getNonEmptyAiMsg(result);
  
+    if (conversationState.hasValidPrompt){
+      const isBackup = await backupDataToBucket(sdx,userId,projectId); 
 
-    const isBackup = await backupDataToBucket(sdx,userId,projectId); 
-    if (isBackup){
-      const files = await getFiles(sdx);
-      send({
-        action: "BUCKET_UPDATE",
-        files
-      })
+      if (isBackup){
+        const files = await getFiles(sdx);
+        send({
+          action: "BUCKET_UPDATE",
+          files
+        })
+      }
     }
-   if (typeof(lastMessage)==="string"){
+
+   if (typeof(lastMessage)==="string" && lastMessage.length < 200){
 
     send({
       action: "LLM_UPDATE",

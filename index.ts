@@ -41,7 +41,9 @@ const MessageState = z.object({
   })),
   hasValidated: z.boolean().default(false),
   errors: z.array(z.string()).optional(),
-  validationAttempt: z.number().default(0)
+  validationAttempt: z.number().default(0),
+  hasEnhancedPrompt: z.boolean().default(false).optional(),
+  hasValidPrompt:z.boolean().default(false).optional(),
 })
 
 
@@ -226,6 +228,8 @@ app.post("/prompt",async (req,res)=>{
         hasValidated: false,
         errors: [],
         validationAttempt:0,
+        hasEnhancedPrompt: false,
+        hasValidPrompt:false,
       });
     }
 
@@ -240,7 +244,20 @@ app.post("/prompt",async (req,res)=>{
         hasValidated: false,
         errors: [],
         validationAttempt:0,
+        hasEnhancedPrompt:false,
+        hasValidPrompt:false,
       })
+    }else{
+       globalStore.get(userId)?.set(projectId,{
+        messages:[],
+        llmCalls:0,
+        hasSummazied: false,
+        generatedFiles:[],
+        hasValidated: false,
+        errors: [],
+        validationAttempt:0,
+        
+      })  
     }
     const conversationState:State = projectState?.get(projectId)!; 
       console.log("project state",conversationState)
