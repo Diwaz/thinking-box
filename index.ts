@@ -43,7 +43,8 @@ const MessageState = z.object({
   errors: z.array(z.string()).optional(),
   validationAttempt: z.number().default(0),
   hasEnhancedPrompt: z.boolean().default(false).optional(),
-  hasValidPrompt:z.boolean().default(false).optional(),
+  hasValidPrompt:z.boolean().default(false).optional(), 
+  projectTitle: z.string().optional()
 })
 
 
@@ -229,7 +230,8 @@ app.post("/prompt",async (req,res)=>{
         errors: [],
         validationAttempt:0,
         hasEnhancedPrompt: false,
-        hasValidPrompt:false,
+        hasValidPrompt:false, 
+        projectTitle:"",
       });
     }
 
@@ -246,17 +248,25 @@ app.post("/prompt",async (req,res)=>{
         validationAttempt:0,
         hasEnhancedPrompt:false,
         hasValidPrompt:false,
+        projectTitle:"",
       })
     }else{
+      const existingProject = projectState.get(projectId);
+      // TODO
+      // if (existingProject?.projectTitle?.length === 0){
+      //   // db call
+      // }
        globalStore.get(userId)?.set(projectId,{
         messages:[],
-        llmCalls:0,
+        llmCalls:existingProject?.llmCalls,
         hasSummazied: false,
         generatedFiles:[],
         hasValidated: false,
         errors: [],
         validationAttempt:0,
-        
+        hasValidPrompt:existingProject?.hasEnhancedPrompt,
+        hasEnhancedPrompt: existingProject?.hasEnhancedPrompt,
+        projectTitle: existingProject?.projectTitle, 
       })  
     }
     const conversationState:State = projectState?.get(projectId)!; 

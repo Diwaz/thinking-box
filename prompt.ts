@@ -205,7 +205,7 @@ CRITICAL INSTRUCTIONS:
 - Only inject the error token if you're certain the request is invalid
 
 RESPONSE FORMAT:
-If VALID: Respond with exactly "VALID"
+If VALID: generate a title very short from 2-5 words max from the user query
 If INVALID: Respond with exactly "__INPUT-VALIDATION-ERROR__"
 
 Do not add any explanation, reasoning, or additional text. Output only the validation result.

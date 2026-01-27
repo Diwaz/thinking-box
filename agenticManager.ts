@@ -1,4 +1,5 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatOpenAI, OpenAI } from "@langchain/openai";
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 import { StateGraph, START, END, Command } from "@langchain/langgraph";
@@ -36,6 +37,7 @@ const MessageState = z.object({
   validationAttempt: z.number().default(0),
   hasEnhancedPrompt:z.boolean().default(false).optional(), 
   hasValidPrompt:z.boolean().default(false).optional(),
+  projectTitle: z.string().optional()
 })
 
 const createFileSchema = z.object({
@@ -54,6 +56,7 @@ const getNonEmptyAiMsg = (state:State) : string  =>{
       const lastMessage = state.messages.at(-1);
       console.log("LETZ SEE tHE FINAL MSG",lastMessage)
       if (isAIMessage(lastMessage)){
+        console.log("yes ai")
         if (Array.isArray(lastMessage.content)){
         fullLastMsg =lastMessage.content.map((part)=>{
             return part.text
@@ -61,6 +64,7 @@ const getNonEmptyAiMsg = (state:State) : string  =>{
         }else{
           fullLastMsg = lastMessage.content
         }
+        console.log("last msg",fullLastMsg)
         return fullLastMsg
       }
      return "Your request has been completed!"; 
@@ -72,9 +76,15 @@ type State = z.infer<typeof MessageState>;
 export async function runAgenticManager(userId:string,projectId:string,conversationState:State,clients:Map<string,WebSocket>,sdx:Sandbox){
   conversationState.hasSummazied = false;
 const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash-lite",
-  
+  model: "gemini-2.5-flash", 
 });
+
+const openAi = new ChatOpenAI({
+  model:'gpt-5.1-codex',
+})
+// const anthopic = new ChatAnthropic({
+//   model:'gpt-5.1-codex',
+// })
 
 
 const createfile = tool(
@@ -127,10 +137,10 @@ const runShellCommands = tool (
       return `Command cannot be empty`
     }
 
- send({
-      action: "LLM_UPDATE",
-      message:"Running Terminal Command"
-    })
+//  send({
+//       action: "LLM_UPDATE",
+//       message:"Running Terminal Command"
+//     })
 
     try {
         secureCommand(command);
@@ -164,7 +174,7 @@ const toolsByName = {
 
 const tools = Object.values(toolsByName);
 const llmWithTools = llm.bindTools(tools);
-
+const OpenAiWithTools = openAi.bindTools(tools);
 
 
 async function llmCall(state: State) {
@@ -174,10 +184,10 @@ async function llmCall(state: State) {
     console.log("messages till now",state.messages)
     try {
       
-      send({
-        action: "LLM_UPDATE",
-        message:"Evaluating Results"
-    })
+    //   send({
+    //     action: "LLM_UPDATE",
+    //     message:"Evaluating Results"
+    // })
     let dynamicPrompt = SYSTEM_PROMPT;
 const contextFile =  Bun.file(`./Context/${projectId}.md`)
 if (await contextFile.exists()){
@@ -200,15 +210,16 @@ if (await contextFile.exists()){
 
   messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
   const llmResponse = await llmWithTools.invoke(messageWrapper)
-  if (llmResponse.tool_calls?.length == 0){
-    const messageSegment = llmResponse.content;
-    if (typeof(messageSegment)==="string" && messageSegment.length < 200){
-      send({
-        action:"LLM_UPDATE",
-        message:messageSegment
-      })
-    }
-  } 
+  // const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
+  // if (llmResponse.tool_calls?.length == 0){
+  //   const messageSegment = llmResponse.content;
+  //   if (typeof(messageSegment)==="string" && messageSegment.length < 200){
+  //     send({
+  //       action:"LLM_UPDATE",
+  //       message:messageSegment
+  //     })
+  //   }
+  // } 
   const newCallCount = (state.llmCalls ?? 0) + 1
   console.log(`result of ${state.llmCalls}`,llmResponse.content)
   // state.messages.push(llmResponse.content)
@@ -258,10 +269,10 @@ async function toolNode(state: State) {
           console.log("error parsing ?",e)
         }
       }
-         send({
-      action: "LLM_UPDATE",
-      message:"Using Tools"
-    })
+    //      send({
+    //   action: "LLM_UPDATE",
+    //   message:"Using Tools"
+    // })
     result.push(
       new ToolMessage({
         tool_call_id: toolCall.id,
@@ -550,33 +561,37 @@ async function inputValidation(state:State){
           messages:state.messages,
           hasValidPrompt:true,
       }
-    } 
-    const userMessage = state.messages.filter(msg => msg._getType() === "human");
-    console.log("user messages",userMessage)
-    const llmInputValidation = await llm.invoke([
+    }else{
+      const userMessage = state.messages.filter(msg => msg._getType() === "human");
+      console.log("user messages",userMessage)
+      const llmInputValidation = await llm.invoke([
       new SystemMessage(INPUT_VALIDATION_PROMPT),
       ...userMessage
     ])
 
     if (typeof llmInputValidation["content"] === "string"){
       console.log("llm response of validating prommpt",llmInputValidation["content"]);
-      const isValid = containsInputValidationError(llmInputValidation["content"]);
-      console.log("is valid result",isValid);
-      if (!isValid){
+      const isInvalid = containsInputValidationError(llmInputValidation["content"]);
+      console.log("is valid result",isInvalid);
+      if (!isInvalid){
+      const title = llmInputValidation["content"];
         conversationState.hasValidPrompt = true;
-         return {
+        conversationState.projectTitle = title;
+        return {
+          projectTitle: title,
           messages:state.messages,
           hasValidPrompt:true,
-      }
+        }
       }else{
-          send({
+        send({
             action:"LLM_UPDATE",
             message:"Sorry your request cannot be proceed further please input relevant query"
           })
+        }
+        
       }
-     
-    }
-
+      
+    } 
   }catch(err){
     console.log("LLM not responding while validating input",err)
     
@@ -703,11 +718,11 @@ const agent = new StateGraph(MessageState)
         }
     };
     console.log("agent started")
-    send({
-      action: "LLM_UPDATE",
-      message:"Agent started"
-    })
-    const result = await agent.invoke(conversationState)
+    // send({
+    //   action: "LLM_UPDATE",
+    //   message:"Agent started"
+    // })
+    const result = await agent.invoke(conversationState,{recursionLimit:40})
     // console.log("RESULT messages",result.messages)
     
     // start to upload to s3
@@ -727,12 +742,13 @@ const agent = new StateGraph(MessageState)
       }
     }
 
-   if (typeof(lastMessage)==="string" && lastMessage.length < 200){
+   if (typeof(lastMessage)==="string"){
 
     send({
       action: "LLM_UPDATE",
       message:lastMessage
     })
+
     try {
        await prisma.conversationHistory.create({
     data:{
