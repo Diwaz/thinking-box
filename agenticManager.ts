@@ -575,6 +575,10 @@ async function inputValidation(state:State){
       console.log("is valid result",isInvalid);
       if (!isInvalid){
       const title = llmInputValidation["content"];
+            send({
+      action: "TITLE_UPDATE",
+      message:title
+    })
         conversationState.hasValidPrompt = true;
         conversationState.projectTitle = title;
         return {
@@ -750,12 +754,23 @@ const agent = new StateGraph(MessageState)
     })
 
     try {
+      if (conversationState.projectTitle){
+      await prisma.project.update({
+        where :{
+        id: projectId
+        },
+        data:{
+          title: conversationState.projectTitle
+        }
+      })
+      }
+
        await prisma.conversationHistory.create({
     data:{
       projectId,
       type: ConversationType.TEXT_MESSAGE,
       messageFrom:MessageFrom.ASSISTANT,
-      contents: lastMessage
+      contents: lastMessage,
     }
   })
     }catch(err){
