@@ -577,7 +577,7 @@ async function inputValidation(state:State){
       const title = llmInputValidation["content"];
             send({
       action: "TITLE_UPDATE",
-      message:title
+      title:title
     })
         conversationState.hasValidPrompt = true;
         conversationState.projectTitle = title;

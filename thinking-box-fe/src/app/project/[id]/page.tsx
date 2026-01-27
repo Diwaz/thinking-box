@@ -45,6 +45,7 @@ function WebBuilder({params}) {
 const [fileTree, setFileTree] = useState<FileNode[]>([]);
 const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
+const [projectTitle, setProjectTitle] = useState("New Project");
  
 
 
@@ -74,10 +75,15 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
               from: From.ASSISTANT
             }
           ]); 
+          break;
         case "Thinking":
           setThinking(true)
-        case "Building":
-          setBuilding(true)
+          break;
+        case "TITLE_UPDATE":
+          if (data.message.title){
+            setProjectTitle(data.message.title)
+          }
+          break;
         case "BUCKET_UPDATE":
           // setValidating(true)
           // console.log("msg we receive from socket",data.message)
@@ -86,6 +92,7 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
           sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
           setIsFileTreeLoading(false);
           setFileTree(tree || [])
+          break;
       }
 
       
@@ -192,7 +199,7 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
     <div className='px-1'>
         <div className="navbar h-10  flex gap-2 p-2  ">
     <Codesandbox className='w-6 h-6'/>
-    / Landing-Page
+    / {projectTitle}
         </div>
         <div className="chatWrapper  flex h-[calc(100vh-40px)] gap-2  ">
             <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end ">
