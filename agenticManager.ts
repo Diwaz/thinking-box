@@ -51,25 +51,6 @@ const createFileSchema = z.object({
     })
 
 
-const getNonEmptyAiMsg = (state:State) : string  =>{
-      let fullLastMsg:string='';
-      const lastMessage = state.messages.at(-1);
-      console.log("LETZ SEE tHE FINAL MSG",lastMessage)
-      if (isAIMessage(lastMessage)){
-        console.log("yes ai")
-        if (Array.isArray(lastMessage.content)){
-        fullLastMsg =lastMessage.content.map((part)=>{
-            return part.text
-  }).join("\n")
-        }else{
-          fullLastMsg = lastMessage.content
-        }
-        console.log("last msg",fullLastMsg)
-        return fullLastMsg
-      }
-     return "Your request has been completed!"; 
-    }
-
 type State = z.infer<typeof MessageState>;
 
 
@@ -80,7 +61,7 @@ const llm = new ChatGoogleGenerativeAI({
 });
 
 const openAi = new ChatOpenAI({
-  model:'gpt-5.1-codex',
+  model:'gpt-5.2',
 })
 // const anthopic = new ChatAnthropic({
 //   model:'gpt-5.1-codex',
@@ -209,8 +190,8 @@ if (await contextFile.exists()){
   }
 
   messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
-  const llmResponse = await llmWithTools.invoke(messageWrapper)
-  // const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
+  // const llmResponse = await llmWithTools.invoke(messageWrapper)
+  const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
   // if (llmResponse.tool_calls?.length == 0){
   //   const messageSegment = llmResponse.content;
   //   if (typeof(messageSegment)==="string" && messageSegment.length < 200){
@@ -465,6 +446,7 @@ ${errors.some(e => e.includes('Preview shows error')) ? `
       validationAttempt: currentAttempts
     }
 }
+
 // dummy summarizing node 
 async function summarizingNodeDummy(state:State){
   console.log("summarizing");
@@ -633,24 +615,56 @@ async function shouldStartBuilding(state:State){
   return 'llmCall';
 }
 
+const getNonEmptyAiMsg = (state:State) : string | boolean =>{
+      let fullLastMsg:string='';
+      const lastMessage = state.messages.at(-1);
+      console.log("LETZ SEE tHE FINAL MSG",lastMessage)
+      if (isAIMessage(lastMessage)){
+        console.log("yes ai")
+        if (Array.isArray(lastMessage.content)){
+        fullLastMsg =lastMessage.content.map((part)=>{
+            return part.text
+  }).join("\n")
+        }else{
+          fullLastMsg = lastMessage.content
+        }
+        console.log("last msg",fullLastMsg)
+        return fullLastMsg
+      }
+     return false; 
+    }
+
+
 
 async function finalNode(state:State){
 
 try {
+let llmFinalResponse;
+  const finalMessage = getNonEmptyAiMsg(state);
+  
   console.log("reached final node");
-  const conversationMessages = state.messages.filter(
+  if (finalMessage){
+    llmFinalResponse = {
+      content: finalMessage
+    }
+  }else{
+    console.log("message not found need to generate")
+    const conversationMessages = state.messages.filter(
       msg => msg._getType() === 'human' || msg._getType() === 'ai'
     );
+    
+    llmFinalResponse = await llm.invoke([
+      new SystemMessage(FINAL_AI_RESPONSE_SYSTEM_PROMPT),
+      ...conversationMessages
+    ])
+  }
+  console.log("generated finalNode Msg",llmFinalResponse)
 
-  const llmFinalResponse = await llm.invoke([
-    new SystemMessage(FINAL_AI_RESPONSE_SYSTEM_PROMPT),
-    ...conversationMessages
-  ])
   // const lastMessage = state.messages.at(-1);
   // const llmFinalResponse = {
   //   content: lastMessage!["content"] ?? "Final Resp"
   // }
-  
+  console.log("final Message which should be appear",llmFinalResponse) 
   return {
     messages: [...state.messages,new AIMessage(llmFinalResponse["content"])]
   }
@@ -678,7 +692,7 @@ async function shouldContinue(state: State) {
   if (lastMessage == null || !isAIMessage(lastMessage)) {
     return END
   }
-
+  
   if (lastMessage.tool_calls?.length) {
     return "toolNode";
   }
@@ -733,7 +747,7 @@ const agent = new StateGraph(MessageState)
     // console.log("last AI MSG",result.messages.at(-1).content);
     // const lastMessage = result.messages.at(-1).content;
     const lastMessage = getNonEmptyAiMsg(result);
- 
+    console.log("result extracted from final node",lastMessage)
     if (conversationState.hasValidPrompt){
       const isBackup = await backupDataToBucket(sdx,userId,projectId); 
 

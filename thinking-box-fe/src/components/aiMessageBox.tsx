@@ -20,10 +20,10 @@ const AiMsgBox = ({message}:{message:MessagePacket}) => {
             li: ({node, ...props}) => <li className="text-neutral-300 ml-2" {...props} />,
             p: ({node, ...props}) => <p className="mb-3 text-neutral-300 leading-relaxed" {...props} />,
             strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
-            code: ({node, inline, ...props}: any) => 
-              inline 
-                ? <code className="bg-neutral-800 px-1.5 py-0.5 rounded text-sm text-pink-400" {...props} />
-                : <code className="block bg-neutral-900 p-3 rounded-md text-sm overflow-x-auto" {...props} />,
+            // code: ({node, inline, ...props}: any) => 
+            //   inline 
+            //     ? <code className="bg-neutral-800 px-1.5 py-0.5 rounded text-sm text-pink-400" {...props} />
+            //     : <code className="block bg-neutral-900 p-3 rounded-md text-sm overflow-x-auto" {...props} />,
             a: ({node, ...props}) => <a className="text-blue-400 hover:text-blue-300 underline" {...props} />,
             blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-neutral-600 pl-4 italic text-neutral-400" {...props} />,
           }}

@@ -27,7 +27,7 @@ app.use(cors());
 
 
 
-const SANDBOX_TIMEOUT = 120_000;
+const SANDBOX_TIMEOUT = 20 * 60 * 1000;
 
 const prisma = new PrismaClient();
 
