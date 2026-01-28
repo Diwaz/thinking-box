@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import AiMsgBox from '@/components/aiMessageBox';
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
+import { DotLottiePlayer } from '@dotlottie/react-player';
 
 export enum From {
   USER,
@@ -41,6 +42,8 @@ function WebBuilder({params}) {
   const [initialPrompt, setInitialPrompt] = useState("")
   const [messages, setMessages] = useState<MessagePacket[]>([])
   const [thinking, setThinking] = useState(false)
+  const [building, setBuiding] = useState(true)
+  const [delivering, setDelivering] = useState(false)
 const [fileTree, setFileTree] = useState<FileNode[]>([]);
 const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
@@ -260,7 +263,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
   ))
 }
 
-                      
+                     
                     </div>
                     ):(
                       <div>Empty</div>
@@ -275,7 +278,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
             </div>
             <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm h-full  flex-col ">
 
-        <Tabs defaultValue="editor" className='h-full'>
+        <Tabs defaultValue="preview" className='h-full'>
 
                 <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10">
          <TabsList>
@@ -381,7 +384,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         <TabsContent value="preview">
           <div className='h-full'>
          {
-            linkArrived  ?
+            !linkArrived  ?
                         (<iframe src={`${projectUri}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
               <div className=' h-full flex justify-center items-center'>
                       <Card className="w-full max-w-xl ">
@@ -390,7 +393,16 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         <Skeleton className="h-4 w-1/2" />
       </CardHeader>
       <CardContent>
-        <Skeleton className="aspect-video w-full" />
+
+        <div className="bg-[#252525] rounded-sm w-full flex justify-center items-center" >
+                                                <DotLottiePlayer
+                                                src={`${thinking ? "/plane.lottie" : building ? "/cube.lottie" : "/loading.lottie"}`}
+                                                loop
+                                                autoplay
+                                                style={{ width: '200px', height: '200px' }}
+                                                className='lg:w-[400px] lg:h-[400px]'
+                                            />
+          </div>
       </CardContent>
     </Card>
               </div>
