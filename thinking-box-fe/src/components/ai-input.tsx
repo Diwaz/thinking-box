@@ -137,7 +137,6 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
               )}
             </Button>
           </div>
-
           {/* Right controls */}
           <div className="flex items-center gap-2">
             <Button
@@ -176,7 +175,6 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
             >
               <Plus className="h-4 w-4 text-foreground/80" />
             </Button>
-
             <Button
               type="button"
               variant="ghost"

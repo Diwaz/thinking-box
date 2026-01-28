@@ -112,6 +112,25 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.loader {
+  --s: 0.6; /* scale factor */
+
+  width: calc(40px * var(--s));
+  height: calc(40px * var(--s));
+
+  --c: no-repeat linear-gradient(white 0 0);
+  background: var(--c), var(--c), var(--c), var(--c);
+  background-size: calc(21px * var(--s)) calc(21px * var(--s));
+
+  animation: l5 1.5s infinite cubic-bezier(0.3,1,0,1);
+}
+
+@keyframes l5 {
+   0%   {background-position: 0    0,100% 0   ,100% 100%,0 100%}
+   33%  {background-position: 0    0,100% 0   ,100% 100%,0 100%;width:30px;height: 30px}
+   66%  {background-position: 100% 0,100% 100%,0    100%,0 0   ;width:30px;height: 30px}
+   100% {background-position: 100% 0,100% 100%,0    100%,0 0   }
+}
 @layer base {
   * {
     @apply border-border outline-ring/50;

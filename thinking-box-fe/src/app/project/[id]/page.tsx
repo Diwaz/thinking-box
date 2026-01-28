@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import AiMsgBox from '@/components/aiMessageBox';
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 import { DotLottiePlayer } from '@dotlottie/react-player';
+import Image from 'next/image';
 
 export enum From {
   USER,
@@ -42,12 +43,13 @@ function WebBuilder({params}) {
   const [initialPrompt, setInitialPrompt] = useState("")
   const [messages, setMessages] = useState<MessagePacket[]>([])
   const [thinking, setThinking] = useState(false)
-  const [building, setBuiding] = useState(true)
-  const [delivering, setDelivering] = useState(false)
+  const [building, setBuiding] = useState(false)
+  const [delivering, setDelivering] = useState(true)
 const [fileTree, setFileTree] = useState<FileNode[]>([]);
 const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
 const [projectTitle, setProjectTitle] = useState("New Project");
+const [createdFile,setCreatedFile]= useState<string[]>([]);
  
 
 
@@ -59,7 +61,21 @@ const [projectTitle, setProjectTitle] = useState("New Project");
   //     setFileTree(JSON.parse(treeData));
   //   }
   // },[])
+  const getExtension = (fileName:string): string=>{
+    console.log("filename received in getExtension",fileName)
+    const extension = fileName.split(".").pop()?.toLowerCase();
+    if (extension==="jsx" || extension==="tsx" || extension==="js" || extension==="ts"){
+      return 'react';
+    }else if(extension==="css"){
+      return 'css';
+    }else if (extension==="html"){
+      return "html"
+    }
+    else{
+      return 'rust'
+    }
 
+  }
   useEffect(()=>{
     if (loaded.current) return ;
     loaded.current = true;
@@ -68,7 +84,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     ws.onmessage = (e) => {
       console.log("user connected")
       const data = JSON.parse(e.data);
-      console.log("msg from socket",data.message.message)
+      // console.log("msg from socket",data.message.message)
       switch(data.message.action){
         case "LLM_UPDATE":
           setMessages(prev => [...prev,
@@ -78,8 +94,23 @@ const [projectTitle, setProjectTitle] = useState("New Project");
             }
           ]); 
           break;
-        case "Thinking":
+        case "FILE_CREATION_UPDATE":
+          if (data.message.message){
+            console.log("file_creation_update",data.message.message)
+            const message = data.message.message.split("/").pop();
+            setCreatedFile(prev=> [...prev,message]) 
+          }
+          break;
+        case "THINKING":
           setThinking(true)
+          break;
+        case "BUILDING":
+          setThinking(false)
+          setBuiding(true);
+          break;
+        case "DELIVERING":
+          setBuiding(false);
+          setDelivering(true);
           break;
         case "TITLE_UPDATE":
           if (data.message.title){
@@ -89,6 +120,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         case "BUCKET_UPDATE":
           // setValidating(true)
           // console.log("msg we receive from socket",data.message)
+          setDelivering(false);
           setLinkArrived(true);
           sessionStorage.setItem(`project_URL_${id}`,projectUri);
           const tree = buildFileTree(data.message.files)  
@@ -262,7 +294,25 @@ const [projectTitle, setProjectTitle] = useState("New Project");
       </> 
   ))
 }
-
+  {createdFile.length > 0 ? (
+    <div>{createdFile.map((file,indx)=>{
+      const fileType = getExtension(file);
+      return (
+        <div key={indx} className=' p-2 flex flex-col gap-2 m-2  w-40 bg-[#121212] hover:border-[#0070F3] border-1 rounded-sm cursor-pointer text-sm font-bold  '>
+          <div>Created:</div>
+          
+      <div className='flex items-center  gap-2 text-sm font-light'>
+        <Image src={`/${fileType}.png`} width={20} height={5} alt={`${fileType}`}/>
+        <span className='text-[#959595]'>src/</span>
+        {file}
+      </div>
+        </div>
+      )
+    })}</div>
+  ):(
+    <div></div>
+  )}
+          {/* <div className='loader'></div> */}
                      
                     </div>
                     ):(
@@ -384,7 +434,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         <TabsContent value="preview">
           <div className='h-full'>
          {
-            !linkArrived  ?
+            linkArrived  ?
                         (<iframe src={`${projectUri}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
               <div className=' h-full flex justify-center items-center'>
                       <Card className="w-full max-w-xl ">

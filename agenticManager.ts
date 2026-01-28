@@ -89,10 +89,10 @@ const createfile = tool(
     await sdx.commands.run(`mkdir -p ${dir}`);
 
       await sdx.files.write(filePath,content);
-
+        console.log("sending this file ",fullPath)
        send({
-      action: "LLM_UPDATE",
-      message:`Created file ${filePath}`
+      action: "FILE_CREATION_UPDATE",
+      message:`${fullPath}`
     })
       return JSON.stringify({
         success: true,
@@ -118,10 +118,7 @@ const runShellCommands = tool (
       return `Command cannot be empty`
     }
 
-//  send({
-//       action: "LLM_UPDATE",
-//       message:"Running Terminal Command"
-//     })
+
 
     try {
         secureCommand(command);
@@ -159,6 +156,10 @@ const OpenAiWithTools = openAi.bindTools(tools);
 
 
 async function llmCall(state: State) {
+    send({
+      action: "BUILDING",
+      // message:"Running Terminal Command"
+    })
   const messageWrapper: BaseMessage[] =[];
   // if (state.llmCalls == 0){
     console.log(`${state.llmCalls}th LLM CALLLLLLLL`)
@@ -190,8 +191,8 @@ if (await contextFile.exists()){
   }
 
   messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
-  // const llmResponse = await llmWithTools.invoke(messageWrapper)
-  const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
+  const llmResponse = await llmWithTools.invoke(messageWrapper)
+  // const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
   // if (llmResponse.tool_calls?.length == 0){
   //   const messageSegment = llmResponse.content;
   //   if (typeof(messageSegment)==="string" && messageSegment.length < 200){
@@ -368,7 +369,10 @@ async function checkForErrors(sdx:Sandbox,state:State): Promise<string[]>{
   return errors
 }
 async function validationNode(state:State){
-  
+      send({
+      action: "DELIVERING",
+      // message:"Running Terminal Command"
+    })
   const currentAttempts = state.validationAttempt || 0;
   send({
    action:"LLM_UPDATE",
@@ -538,6 +542,10 @@ function containsInputValidationError(text:string){
 
 async function inputValidation(state:State){
   try {
+     send({
+      action: "THINKING",
+      // message:"Running Terminal Command"
+    })
     if (conversationState.hasValidPrompt === true){
          return {
           messages:state.messages,
