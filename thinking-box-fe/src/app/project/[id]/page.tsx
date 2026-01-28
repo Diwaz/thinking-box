@@ -147,6 +147,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     if (treeData && projectURL){
       // console.log("we here on sessionStorage",JSON.parse(treeData))
       // console.log("response uri",response)
+      console.log("we already have project datas",projectURL)
       setFileTree(JSON.parse(treeData)); 
       // setResponse(projectURL);      
       setProjectUri(projectURL)
@@ -158,6 +159,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     }else {
 
         // setIsFileTreeLoading(true);
+        console.log("should not reach here on the 1st render")
       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
@@ -195,6 +197,8 @@ const [projectTitle, setProjectTitle] = useState("New Project");
       console.log("we go fetching again")
       setLinkArrived(false);
        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
+       const title = existingData.title
+       if (title){
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
       console.log("URL",existingData.uri)
@@ -203,6 +207,8 @@ const [projectTitle, setProjectTitle] = useState("New Project");
       setFileTree(tree || []); 
       setLinkArrived(true);
       setProjectUri(existingData.uri);
+       }
+
       // console.log("existing data",existingData)
       // setResponse(existingData.uri)
     }

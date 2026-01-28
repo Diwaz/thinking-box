@@ -221,7 +221,7 @@ if (await contextFile.exists()){
   //   }
   // } 
   const newCallCount = (state.llmCalls ?? 0) + 1
-  console.log(`result of ${state.llmCalls}`,llmResponse.content)
+  console.log(`result of ${state.llmCalls}`,llmResponse)
   // state.messages.push(llmResponse.content)
   
   return {

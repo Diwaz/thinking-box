@@ -163,18 +163,21 @@ app.get("/project/:id",async(req,res)=>{
 app.get("/project/history/:id",async(req,res)=>{
   const {id} = await req.params;
   try {
-    // const projectData = await prisma.project.findFirst({
-    //   where: {
-    //     id
-    //   },
-    //   select:{
-    //     id:true,
-    //     title:true,
-    //     initialPrompt:true,
-    //     userId:true,
-    //     conversationHistory:true
-    //   }
-    // })
+    const projectData = await prisma.project.findFirst({
+      where: {
+        id
+      },
+      select:{
+        id:true,
+        title:true,
+        initialPrompt:true,
+        userId:true,
+        conversationHistory:true
+      }
+    })
+    // if (projectData?.userId !== )
+    const title = projectData?.title;
+
    const sandboxId = await getSandboxId(id);
      if (!sandboxId){
       return res.status(404).json({
@@ -193,7 +196,8 @@ app.get("/project/history/:id",async(req,res)=>{
       success: true,
       // conversation: projectData,
       fileContent: files,
-      uri: `https://${host}`
+      uri: `https://${host}`,
+      title
     });
 
   }catch(err){
