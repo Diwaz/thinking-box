@@ -86,7 +86,7 @@ interface FileTreeNodeProps {
 
 //Its job is to render ONE node (file or folder) and handle user interactions 
 function FileTreeNode({ node, onFileClick }: FileTreeNodeProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const handleClick = () => {
     if (node.type === 'folder') {
       setIsOpen(!isOpen)

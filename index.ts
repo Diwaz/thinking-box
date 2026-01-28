@@ -188,7 +188,8 @@ app.get("/project/history/:id",async(req,res)=>{
     const files = await getFiles(sdx);
 
         const host = sdx.getHost(5173);
-    res.status(200).json({
+        console.log("sent response to server")
+   return res.status(200).json({
       success: true,
       // conversation: projectData,
       fileContent: files,
@@ -364,7 +365,7 @@ const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
       console.log("created new sandbox with id:",info.sandboxId);
 
       if (await isObjectExist(projectId)){
-         loadProjectFromBucket(sdx,projectId) 
+         await loadProjectFromBucket(sdx,projectId) 
       }
       return info.sandboxId;
   })();

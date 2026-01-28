@@ -36,12 +36,11 @@ function WebBuilder({params}) {
 
    
   
-  const [response, setResponse] = useState("")
+  const [projectUri, setProjectUri] = useState("")
+  const [linkArrived,setLinkArrived] = useState(!!sessionStorage.getItem(`project_URL_${id}`))
   const [initialPrompt, setInitialPrompt] = useState("")
   const [messages, setMessages] = useState<MessagePacket[]>([])
   const [thinking, setThinking] = useState(false)
-  const [building, setBuilding] = useState(false)
-  const [validating, setValidating] = useState(false)
 const [fileTree, setFileTree] = useState<FileNode[]>([]);
 const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
@@ -87,7 +86,8 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         case "BUCKET_UPDATE":
           // setValidating(true)
           // console.log("msg we receive from socket",data.message)
-
+          setLinkArrived(true);
+          sessionStorage.setItem(`project_URL_${id}`,projectUri);
           const tree = buildFileTree(data.message.files)  
           sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
           setIsFileTreeLoading(false);
@@ -103,7 +103,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
 
       console.log("initial prompt from server",projectData.conversationHistory)
 
-
+        //RENDER-CONDITION: On First time screen
       if (projectData.conversationHistory.length === 0 ){
         setInitialPrompt(projectData.initialPrompt);
           setMessages(prev => [...prev,
@@ -122,10 +122,16 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         }
           const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
           console.log("res from pes",res)
-          setResponse(res.uri);
+          // setResponse(res.uri);
+          setProjectUri(res.uri);
 
+        // RENDER-CONDITION: On follow-up prompt 
       }else{
         const messageHistory = projectData.conversationHistory; 
+        const title = projectData.title;
+        if (title.length > 0){
+          setProjectTitle(title)
+        }
         messageHistory.forEach((msg)=>{
           setMessages((prev)=>[...prev,{
             content:msg.contents,
@@ -136,26 +142,33 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         setIsFileTreeLoading(true);
     const treeData = sessionStorage.getItem(`project_tree_${id}`)
     const projectURL = sessionStorage.getItem(`project_URL_${id}`)
+
+    // RENDER-CONDITION: on next-time when user came back aftersometimes but within 30min or on same session
     if (treeData && projectURL){
       // console.log("we here on sessionStorage",JSON.parse(treeData))
       // console.log("response uri",response)
       setFileTree(JSON.parse(treeData)); 
-      setResponse(projectURL);      
+      // setResponse(projectURL);      
+      setProjectUri(projectURL)
 
         setIsFileTreeLoading(false);
+        setLinkArrived(true);
+
+        //RENDER-CONDITION: on next-time when user came back but after 30min on new session
     }else {
 
-        setIsFileTreeLoading(true);
+        // setIsFileTreeLoading(true);
       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
       sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
       sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
+      setLinkArrived(true);
       setFileTree(tree || []); 
 
       setIsFileTreeLoading(false);
       // console.log("existing data",existingData)
-      setResponse(existingData.uri)
+      // setResponse(existingData.uri)
     }
     // const conversation = existingData.conversation
       }
@@ -168,6 +181,8 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     // return () => ws.close();
   },[])
 
+
+  // RENDER-CONDITION:when user goes for new prompt on existing project or project-Id changes
   useEffect(()=>{
     const fetchUpdate =async ()=>{
     //  console.log("check state here",fileTree) 
@@ -178,6 +193,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     // console.log("fetching here",treeData)
     if (!treeData){
       console.log("we go fetching again")
+      setLinkArrived(false);
        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
@@ -185,9 +201,10 @@ const [projectTitle, setProjectTitle] = useState("New Project");
       sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
       sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
       setFileTree(tree || []); 
-
+      setLinkArrived(true);
+      setProjectUri(existingData.uri);
       // console.log("existing data",existingData)
-      setResponse(existingData.uri)
+      // setResponse(existingData.uri)
     }
 
     }
@@ -219,7 +236,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         alt="@shadcn"
         className='rounded-xl'
       />
-      <AvatarFallback>CN</AvatarFallback>
+      <AvatarFallback>TB</AvatarFallback>
     </Avatar>
             <div className='bg-[#1F1F1F]  flex justify-end p-4 rounded-lg'>
 
@@ -358,8 +375,8 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         <TabsContent value="preview">
           <div className='h-full'>
          {
-            response.length > 0  ?
-                        (<iframe src={`${response}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
+            linkArrived  ?
+                        (<iframe src={`${projectUri}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
               <div className=' h-full flex justify-center items-center'>
                       <Card className="w-full max-w-xl ">
       <CardHeader>
