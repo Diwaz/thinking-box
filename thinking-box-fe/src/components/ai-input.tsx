@@ -14,8 +14,8 @@ type InputProps = {
   type: string,
   projectId?: string,
   userId?:string,
-  changeFileState: React.Dispatch<React.SetStateAction<FileNode[]>>,
-  setMessages: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
+  changeFileState?: React.Dispatch<React.SetStateAction<FileNode[]>>,
+  setMessages?: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
 }
 
 
@@ -69,16 +69,22 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
   return (
     <div className="w-full">
       <div
-        className="mx-auto w-full max-w-3xl rounded-3xl  border border-border/50 bg-card/70 p-4 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-xl ring-1 ring-ring/10 md:p-5"
+        className="mx-auto w-full  max-w-3xl rounded-3xl  border border-border/50 bg-card/70 p-4 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-xl ring-1 ring-ring/10 md:p-5"
         role="group"
         aria-label="AI prompt composer"
       >
         <Textarea
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Ask thinking-box to create a prototype…"
-          className="min-h-20 resize-none border-0 bg-transparent px-2 text-base leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-lg"
+          onInput={e => {
+            const target = e.currentTarget;
+            target.style.height = "auto";
+            target.style.height = Math.min(target.scrollHeight, 240) + "px"; // 240px = max-height
+          }}
+          placeholder="Explain your thought"
+          className="min-h-20 resize-none border-0  px-2 text-base leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-lg"
           aria-label="Prompt"
+          style={{ maxHeight: "240px", overflowY: "auto" }}
         />
           {type === "secondary" ? (
 
@@ -162,60 +168,11 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
         </div>
           ):(
 
-        <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="mt-3 flex items-center justify-end">
 
-          {/* Left controls */}
+
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full border border-border/50 bg-background/40 hover:bg-background/60"
-              aria-label="Add"
-            >
-              <Plus className="h-4 w-4 text-foreground/80" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-8 rounded-full border border-border/50 bg-background/40 px-3 text-foreground/80 hover:bg-background/60"
-              aria-label="Attach a file"
-            >
-              <Paperclip className="mr-2 h-4 w-4" />
-              Attach
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setIsPublic((v) => !v)}
-              className="h-8 rounded-full border border-border/50 bg-background/40 px-3 text-foreground/80 hover:bg-background/60"
-              aria-pressed={isPublic}
-              aria-label={isPublic ? "Set project to private" : "Set project to public"}
-            >
-              {isPublic ? (
-                <>
-                  <Globe className="mr-2 h-4 w-4" /> Public
-                </>
-              ) : (
-                <>
-                  <Lock className="mr-2 h-4 w-4" /> Private
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Right controls */}
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full border border-border/50 bg-background/40 hover:bg-background/60"
-              aria-label="Voice input"
-            >
-              <Mic className="h-4 w-4 text-foreground/80" />
-            </Button>
+         
             <Button
               type="button"
               className="h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
