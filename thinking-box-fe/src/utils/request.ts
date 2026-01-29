@@ -23,6 +23,7 @@ const handleRequest = async (method:Method,url:string,options?:RequestOption) =>
     };
     console.log("config",config)
     const response: AxiosResponse = await axios(config);
+    console.log("response from axios",response)
     return response.data;
   } catch (error:any) {
     console.error(" handleRequest error:", error?.response || error);

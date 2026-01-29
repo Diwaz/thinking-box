@@ -29,8 +29,10 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import handleRequest from "@/utils/request"
 
 // This is sample data.
+
 const data = {
   user: {
     name: "shadcn",
@@ -149,8 +151,23 @@ const data = {
     },
   ],
 }
-
+export interface Project {
+    id: string,
+    title:string,
+    initialPrompt:string,
+    userId:string,
+}
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+        React.useEffect(()=>{
+                const fetchProjects =async ()=>{
+                       const response = await handleRequest("GET","http://localhost:8080/project/list");
+                       console.log("response projectsss",response)
+                       const filteredProjects = response.projects.filter((item:Project)=>item.title);
+                        setProjects(filteredProjects);
+                }
+                 fetchProjects();
+        },[])
+       const [projects,setProjects]= React.useState<Project[]>([]) 
   return (
     <Sidebar collapsible="icon"  {...props}>
       <SidebarHeader>
@@ -159,7 +176,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavProjects projects={projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
