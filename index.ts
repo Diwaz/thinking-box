@@ -16,6 +16,7 @@ import { ConversationType } from "./generated/prisma";
 import { MessageFrom } from "./generated/prisma";
 import {toNodeHandler} from 'better-auth/node'
 import { auth } from "./lib/auth";
+import { requireAuth } from "./authMiddleware";
 
 const app = express();
 
@@ -98,10 +99,22 @@ export const getFiles = async (sdx:Sandbox)=>{
 }
 
 const baseProjectParser = z.object({
-  userId: z.uuid(),
   projectId: z.uuid(),
 })
-
+// (property) user: {
+//     id: string;
+//     createdAt: Date;
+//     updatedAt: Date;
+//     email: string;
+//     emailVerified: boolean;
+//     name: string;
+//     image?: string | null | undefined | undefined;
+// }
+const authUserParser = z.object({
+  id: z.string(),
+  email: z.email(),
+  name: z.string(),
+})
 const createProjectParser = baseProjectParser.extend({
 
   initialPrompt: z.string().min(1,{message:"String must be at least 5 character long"})
@@ -111,32 +124,37 @@ const createPromptParser = baseProjectParser.extend({
   
   prompt: z.string().min(1,{message:"String must be at least 5 character long"})
 })
-app.get('/project/list',async(require,res)=>{
-  const id = 'a770b0b5-2bdc-49e3-9795-f887703803fa';
+app.get('/project/list',requireAuth,async(req,res)=>{
+  try {
 
-  if (!id){
-    return res.status(400).json({
-      success: false,
-      message: "Cannot retrieved Id"
-    })
-  }
+    const userData = validateSchema(authUserParser)(req.user);
+      const {id} = userData; 
   const response = await prisma.project.findMany({
     where:{
       userId:id
     }
   })
-
-  console.log("response",response); 
+  
+  // console.log("response",response); 
   return res.status(200).json({
     success: true,
     projects: response 
   })
+  
+}catch(err){
+  return res.status(400).json({
+        success: false,
+        message: "Invalid Request Schema"
+      })
+}
+
 })
-app.post('/project',async(req,res)=>{
+app.post('/project',requireAuth,async(req,res)=>{
   try{
-    
+    const userData = validateSchema(authUserParser)(req.user);
+    const userId = userData.id;
     const body = validateSchema(createProjectParser)(req.body);
-    const {userId,projectId,initialPrompt}= body;
+    const {projectId,initialPrompt}= body;
     const response =  await prisma.project.create({
       data:{
         id:projectId,
@@ -156,13 +174,15 @@ app.post('/project',async(req,res)=>{
 })
 
 app.all('/api/auth/{*any}',toNodeHandler(auth));
-app.get("/project/:id",async(req,res)=>{
+app.get("/project/:id",requireAuth,async(req,res)=>{
   const {id} = await req.params;
   try {
+    const userData = validateSchema(authUserParser)(req.user);
+    const userId = userData.id;
     const projectData = await prisma.project.findFirst({
       where: {
-        id
-        // userId
+        id,
+        userId
       },
       select:{
         id:true,
@@ -195,12 +215,23 @@ app.get("/project/:id",async(req,res)=>{
 })
 
 
-app.get("/project/history/:id",async(req,res)=>{
+app.get("/project/history/:id",requireAuth,async(req,res)=>{
   const {id} = await req.params;
+  if (!id){
+    return res.status(404).json({
+      sucess: false,
+      message: "Invalid Request Schema"
+    })
+  }
   try {
+
+    const userData = validateSchema(authUserParser)(req.user);
+    const userId = userData.id;
+
     const projectData = await prisma.project.findFirst({
       where: {
-        id
+        id,
+        userId
       },
       select:{
         id:true,
@@ -210,6 +241,12 @@ app.get("/project/history/:id",async(req,res)=>{
         conversationHistory:true
       }
     })
+    if (!projectData){
+      return res.status(409).json({
+        success:false,
+        message:"Unauthorized access"
+      })
+    }
     // if (projectData?.userId !== )
     const title = projectData?.title;
 
@@ -251,11 +288,12 @@ app.get("/project/history/:id",async(req,res)=>{
 //   llmCalls:0,
 // }
 
-app.post("/prompt",async (req,res)=>{
+app.post("/prompt",requireAuth,async (req,res)=>{
   try {
-
+    const userData = validateSchema(authUserParser)(req.user);
+    const userId = userData.id;
     const body = validateSchema(createPromptParser)(req.body);
-    const {prompt,projectId,userId} = body;
+    const {prompt,projectId} = body;
     console.log("reached here w/ prompt",prompt)
     // const prompt = await projectData.initialPropmt
    

@@ -160,14 +160,17 @@ export interface Project {
     initialPrompt:string,
     userId:string,
 }
+
 export  function  AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         React.useEffect(()=>{
+                
                 const fetchProjects =async ()=>{
                        const response = await handleRequest("GET","http://localhost:8080/project/list");
                        console.log("response projectsss",response)
                        const filteredProjects = response.projects.filter((item:Project)=>item.title);
                         setProjects(filteredProjects);
                 }
+
                  fetchProjects();
         },[])
        const [projects,setProjects]= React.useState<Project[]>([]) 

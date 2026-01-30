@@ -15,6 +15,8 @@ const handleRequest = async (method:Method,url:string,options?:RequestOption) =>
     const config: AxiosRequestConfig = {
       method,
       url,
+
+      withCredentials: true,
       headers: {
         "Content-Type": "application/json",
         // ...(options?.headers || {}),

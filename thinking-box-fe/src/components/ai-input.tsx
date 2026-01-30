@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import {  useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Plus, Paperclip, Globe, Lock, Mic, ArrowUp, ArrowRight } from "lucide-react"
+import {  ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import handleRequest from "@/utils/request"
 import { FileNode } from "./fileTree"
@@ -19,7 +19,7 @@ type InputProps = {
 }
 
 
-export function AIInput({type,projectId,userId,changeFileState,setMessages}:InputProps) {
+export function AIInput({type,projectId,changeFileState,setMessages}:InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
 
@@ -30,7 +30,6 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
                  const projectId = crypto.randomUUID();
                 const options ={
                   body:{
-                    userId:'a770b0b5-2bdc-49e3-9795-f887703803fa',
                     projectId,
                     initialPrompt:value
                   }
@@ -44,7 +43,6 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
       body :{
         prompt: value,
         projectId,
-        userId,
       }
         }
         setMessages!(prev => [...prev,

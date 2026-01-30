@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react'
-import { AppWindow, AppWindowMac, BadgeCheck, Braces, Brackets, Codesandbox, Command, Copy, Hash, SquareArrowOutUpRight } from 'lucide-react';
-import { Code,Globe,ChevronLeft,ChevronRight,LaptopMinimalCheck,ScreenShare,RotateCcw,Download,Ellipsis} from "lucide-react"
+import {  Codesandbox, Command, Copy, SquareArrowOutUpRight } from 'lucide-react';
+import { Code,Globe} from "lucide-react"
 import {
   Tabs,
   TabsContent,
@@ -88,7 +88,7 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
   useEffect(()=>{
     if (loaded.current) return ;
     loaded.current = true;
-    const ws = new WebSocket(`ws://localhost:8080/?userId=a770b0b5-2bdc-49e3-9795-f887703803fa`)
+    const ws = new WebSocket(`ws://localhost:8080/?userId=AGRJksjS7Tqhny8k5p89pF0NOemtI5E1`)
     
     ws.onmessage = (e) => {
       console.log("user connected")
@@ -161,7 +161,6 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
           body :{
             prompt: projectData.initialPrompt,
             projectId:id,
-            userId:'a770b0b5-2bdc-49e3-9795-f887703803fa'
           }
         }
           const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
@@ -343,7 +342,7 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
                  
                     </div> 
                 <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]  '>
-                    <AIInput type="secondary" projectId={id} userId={'a770b0b5-2bdc-49e3-9795-f887703803fa'} changeFileState={setFileTree} setMessages={setMessages}/>
+                    <AIInput type="secondary" projectId={id}  changeFileState={setFileTree} setMessages={setMessages}/>
                 </div>
             </div>
 

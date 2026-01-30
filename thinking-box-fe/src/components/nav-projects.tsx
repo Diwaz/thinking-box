@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  Divide,
   Folder,
   Forward,
   Frame,
@@ -42,6 +43,7 @@ export function NavProjects({
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Projects</SidebarGroupLabel>
+      {projects.length > 0 && 
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.id}>
@@ -88,6 +90,18 @@ export function NavProjects({
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
+      }
+      {projects.length === 0 && (
+        <SidebarMenu>
+      
+        <SidebarMenuItem>
+          <SidebarMenuButton className="text-sidebar-foreground/70">
+            <MoreHorizontal className="text-sidebar-foreground/70" />
+            <span>Empty</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+      )}
     </SidebarGroup>
   )
 }
