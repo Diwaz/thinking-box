@@ -71,15 +71,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     loaded.current = true;
    
     const fetchData = async ()=>{
-      const projectData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/${id}`)
-
-      console.log("initial prompt from server",projectData.conversationHistory)
-
-
-        const title = projectData.title;
-        if (title.length > 0){
-          setProjectTitle(title)
-        }
+  
         setIsFileTreeLoading(true);
     const treeData = sessionStorage.getItem(`project_tree_${id}`)
     const projectURL = sessionStorage.getItem(`project_URL_${id}`)
@@ -99,7 +91,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
 
         // setIsFileTreeLoading(true);
         console.log("should not reach here on the 1st render")
-      const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
+      const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase/history/${id}`)
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
       sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
@@ -134,7 +126,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     if (!treeData){
       console.log("we go fetching again")
       setLinkArrived(false);
-       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
+       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase/history/${id}`)
        const title = existingData.title
        if (title){
       const filesData = existingData.fileContent
@@ -171,7 +163,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     </div> 
         </div>
         <div className="chatWrapper  flex h-[calc(100vh-60px)] gap-2 p-5 ">
-            <div className="previewSection  flex-[100%]  border-1 rounded-sm  border-[#2d2d2d]  h-full  flex-col ">
+            <div className="previewSection  flex-[100%]  border-2 rounded-2xl  border-[#2d2d2d]  h-full  flex-col ">
 
         <Tabs defaultValue="preview" className='h-full'>
 
@@ -299,7 +291,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         </TabsContent>
 
         <TabsContent value="preview">
-          <div className='h-full flex justify-center items-center bg-[#1F1F1F] overflow-auto'>
+          <div className='h-full flex justify-center items-center bg-[#1F1F1F] rounded-b-2xl overflow-auto'>
               {
                 linkArrived ? (
                   <div className='flex justify-center items-center w-full h-full'>

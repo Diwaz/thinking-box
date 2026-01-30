@@ -214,6 +214,68 @@ app.get("/project/:id",requireAuth,async(req,res)=>{
   }
 })
 
+app.get("/showcase/history/:id",requireAuth,async(req,res)=>{
+  const {id} = await req.params;
+  if (!id){
+    return res.status(404).json({
+      sucess: false,
+      message: "Invalid Request Schema"
+    })
+  }
+  try {
+
+    const userData = validateSchema(authUserParser)(req.user);
+    const userId = userData.id;
+    
+    const projectData = await prisma.showcase.findFirst({
+      where: {
+        id,
+      },
+      select:{
+        id:true,
+        title:true,
+        userId:true,
+      }
+    })
+    if (!projectData){
+      return res.status(409).json({
+        success:false,
+        message:"Unauthorized access"
+      })
+    }
+    const title = projectData?.title;
+
+   const sandboxId = await getSandboxId(id);
+     if (!sandboxId){
+      return res.status(404).json({
+        error: "Unable to create Sandbox at the moment"
+      })
+    }
+
+  
+    const sdx = await Sandbox.connect(sandboxId);
+
+    const files = await getFiles(sdx);
+
+        const host = sdx.getHost(5173);
+        console.log("sent response to server")
+   return res.status(200).json({
+      success: true,
+      // conversation: projectData,
+      fileContent: files,
+      uri: `https://${host}`,
+      title
+    });
+
+  }catch(err){
+    console.log("err",err)
+    res.status(404).json({
+      success: false,
+      Error:err
+    })
+  }
+})
+
 
 app.get("/project/history/:id",requireAuth,async(req,res)=>{
   const {id} = await req.params;

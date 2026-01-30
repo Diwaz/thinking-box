@@ -31,7 +31,12 @@ model User {
   @@unique([email])
   @@map("user")
 }
+model Showcase {
+  id String @id
+  title String?
+  userId String
 
+}
 model Project {
   id                  String                @id
   title               String?
