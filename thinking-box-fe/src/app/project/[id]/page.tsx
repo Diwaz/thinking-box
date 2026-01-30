@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/resizable"
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+import { useSession } from '@/lib/auth-client';
 export enum From {
   USER,
   ASSISTANT
@@ -59,7 +60,8 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
 const [projectTitle, setProjectTitle] = useState("New Project");
 const [createdFile,setCreatedFile]= useState<string[]>([]);
- 
+  const { data: session } = useSession();
+  const userId = session?.user.id;
 
 
   // useEffect(()=>{
@@ -88,7 +90,7 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
   useEffect(()=>{
     if (loaded.current) return ;
     loaded.current = true;
-    const ws = new WebSocket(`ws://localhost:8080/?userId=AGRJksjS7Tqhny8k5p89pF0NOemtI5E1`)
+    const ws = new WebSocket(`ws://localhost:8080/?userId=${userId}`)
     
     ws.onmessage = (e) => {
       console.log("user connected")
@@ -277,13 +279,13 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
         </div>
         <div className="chatWrapper  flex h-[calc(100vh-60px)] gap-2  ">
             <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel defaultSize={35} minSize={25} className='flex flex-col justify-en items-center'>
+            <ResizablePanel defaultSize={35} minSize={25} className='flex flex-col justify-end w-full'>
 
-            <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
-                  <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10 '>
+            <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full ">
+                  <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10   '>
                   
                     {messages.length > 0 ? (
-                    <div className="aiMsg flex flex-col gap-5  ">
+                    <div className="aiMsg flex flex-col gap-5   ">
                      {
   messages.map((item, i) => (
      <>
