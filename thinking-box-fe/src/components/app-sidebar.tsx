@@ -30,6 +30,9 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import handleRequest from "@/utils/request"
+import SignIn from "./sign-in"
+import { getSession } from "better-auth/api"
+import { authClient } from "@/lib/auth-client"
 
 // This is sample data.
 
@@ -157,7 +160,7 @@ export interface Project {
     initialPrompt:string,
     userId:string,
 }
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export  function  AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         React.useEffect(()=>{
                 const fetchProjects =async ()=>{
                        const response = await handleRequest("GET","http://localhost:8080/project/list");
@@ -168,8 +171,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                  fetchProjects();
         },[])
        const [projects,setProjects]= React.useState<Project[]>([]) 
+
+const sessionData =  authClient.useSession();
+const hasSession = sessionData.data;
+let userData;
+if (hasSession){
+    userData = {
+        name: hasSession.user.name,
+        email:hasSession.user.email,
+        avatar:hasSession.user.image ?? "https://avatars.githubusercontent.com/u/124599?v=4"
+    }
+}
   return (
-    <Sidebar collapsible="icon"  {...props}>
+    <Sidebar collapsible="icon"    {...props}>
       <SidebarHeader>
     <SidebarTrigger  />
         <TeamSwitcher teams={data.teams} />
@@ -179,7 +193,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {
+            hasSession ?  (
+
+                <NavUser user={userData!} />
+            ):(
+
+                <SignIn/> 
+            )
+        }
+
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -29,6 +29,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { authClient } from "@/lib/auth-client"
+import { useRouter } from "next/navigation"
 
 export function NavUser({
   user,
@@ -39,8 +41,18 @@ export function NavUser({
     avatar: string
   }
 }) {
+  const router = useRouter();
   const { isMobile } = useSidebar()
 
+  const handleSignOut = async()=>{
+   await authClient.signOut({
+                fetchOptions:{
+                  onSuccess:()=>{
+                    router.push("/")
+                  }
+                }
+              })
+  }
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -52,7 +64,9 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {user.name.slice(0,1)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -71,11 +85,11 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">{user.name.slice(0,1)}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate text-xs">{"Hobby Plan"}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -83,27 +97,16 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Sparkles />
+                <div>
                 Upgrade to Pro
+                <div className="text-xs bg-[#1447E6] rounded-sm p-0.5">Coming soon</div>
+                </div>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
+
+            <DropdownMenuItem onClick={handleSignOut}>
+              <LogOut  />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

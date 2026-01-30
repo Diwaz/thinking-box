@@ -15,32 +15,42 @@ datasource db {
 }
 
 model User {
-  id String @id @default(uuid())
-  username String @unique
-  password String  
-  createdAt DateTime @default(now())
-  project Project[]
+  id            String    @id @default(uuid())
+  username      String?   @unique
+  password      String?
+  createdAt     DateTime  @default(now())
+  project       Project[]
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
 }
 
 model Project {
-  id String @id
-  title String? 
-  initialPrompt String
-  userId String 
-  user User @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  id                  String                @id
+  title               String?
+  initialPrompt       String
+  userId              String
+  user                User                  @relation(fields: [userId], references: [id])
+  createdAt           DateTime              @default(now())
   conversationHistory ConversationHistory[]
-  context String?
+  context             String?
 }
 
 model ConversationHistory {
-  id String @id @default(uuid())
-  projectId String
-  project Project @relation(fields: [projectId],references: [id])
-  contents String
+  id          String           @id @default(uuid())
+  projectId   String
+  project     Project          @relation(fields: [projectId], references: [id])
+  contents    String
   messageFrom MessageFrom
-  type ConversationType
-  createdAt DateTime @default(now())
+  type        ConversationType
+  createdAt   DateTime         @default(now())
 
 }
 
@@ -52,4 +62,52 @@ enum MessageFrom {
 enum ConversationType {
   TOOL_CALL
   TEXT_MESSAGE
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

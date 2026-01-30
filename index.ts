@@ -14,7 +14,8 @@ import { validateSchema } from "./lib/validate";
 import { isObjectExist, loadProjectFromBucket } from "./bucketManager";
 import { ConversationType } from "./generated/prisma";
 import { MessageFrom } from "./generated/prisma";
-
+import {toNodeHandler} from 'better-auth/node'
+import { auth } from "./lib/auth";
 
 const app = express();
 
@@ -22,7 +23,10 @@ const server = createServer(app);
 const wss = new WebSocketServer({server})
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  credentials:true,
+  origin:"http://localhost:3000"
+}));
 
 
 
@@ -151,6 +155,7 @@ app.post('/project',async(req,res)=>{
 
 })
 
+app.all('/api/auth/{*any}',toNodeHandler(auth));
 app.get("/project/:id",async(req,res)=>{
   const {id} = await req.params;
   try {

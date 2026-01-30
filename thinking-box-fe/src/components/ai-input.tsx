@@ -66,9 +66,9 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
     }
   }
   return (
-    <div className="w-full">
+    <div className="w-full p-2">
       <div
-        className="mx-auto w-full  max-w-3xl rounded-3xl  border border-border/50 bg-card/70 p-4 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-xl ring-1 ring-ring/10 md:p-5"
+        className="mx-auto w-full  max-w-3xl rounded-lg  border border-border/50 bg-card/70 p-2  shadow-[inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-xl ring-1 ring-ring/10 "
         role="group"
         aria-label="AI prompt composer"
       >

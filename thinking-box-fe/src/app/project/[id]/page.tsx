@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react'
-import { Codesandbox, Copy, SquareArrowOutUpRight } from 'lucide-react';
+import { AppWindow, AppWindowMac, BadgeCheck, Braces, Brackets, Codesandbox, Command, Copy, Hash, SquareArrowOutUpRight } from 'lucide-react';
 import { Code,Globe,ChevronLeft,ChevronRight,LaptopMinimalCheck,ScreenShare,RotateCcw,Download,Ellipsis} from "lucide-react"
 import {
   Tabs,
@@ -27,11 +27,14 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { Separator } from '@/components/ui/separator';
-
+import Link from 'next/link';
 export enum From {
   USER,
   ASSISTANT
 }
+
+
+
 export interface MessagePacket {
   content: string,
   from: From,
@@ -262,9 +265,14 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
   return (
     <div className='px-1'>
         <div className="navbar items-center  flex gap-5 h-15 bg-[#1F1F1F] p-5 ">
-    <Codesandbox className='w-6 h-6'/>
-  <Separator orientation='vertical'/> 
-   <div className=' h-full  '>
+          <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg cursor-pointer'>
+            <Link href={'/'}>
+    <Codesandbox className='w-4 h-4'/>
+            </Link>
+          </div>
+  <Separator orientation='vertical' /> 
+   <div className='  bg-sidebar-primary  h-8 rounded-sm px-5 flex items-center gap-3 '>
+    <Command width={15} className=''/>
     {projectTitle}
     </div> 
         </div>
@@ -358,13 +366,16 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
 
 
         </TabsList>
+        {/* <div className='text-sm bg-[#1F1F1F] p-2 rounded-sm px-5'>
+          {projectTitle}
+        </div> */}
         <div className='flex gap-5 px-2 items-center justify-center'>
-          <div className='hover:bg-[#1F1F1F] px-1 rounded-sm cursor-pointer'>
-<Copy width={15}/>   
+          <div className=' px-1 rounded-sm cursor-pointer'>
+<Copy width={15} className='text-[#949494] hover:text-white'/>   
           </div>
-          <div className='hover:bg-[#1F1F1F] px-1 rounded-sm cursor-pointer'>
+          <div className=' px-1 rounded-sm cursor-pointer'>
             <a href={`${projectUri}`} target='_blank' rel='noopener noreferrer'>
- <SquareArrowOutUpRight width={15} />
+ <SquareArrowOutUpRight width={15} className='text-[#949494] hover:text-white'/>
             </a>
  </div>
  
