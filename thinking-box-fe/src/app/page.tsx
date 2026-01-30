@@ -30,7 +30,7 @@ export default function Home() {
 
 
       </DitherShader>
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar  />
        
       <section className="absolute  top-0 h-full  w-full   mx-auto flex  flex-col  justify-center items-center  text-center md:pt-44">
@@ -38,13 +38,16 @@ export default function Home() {
     <div className=" flex flex-col p-5 w-[70%] gap-8 items-center ">
 
         <div className="text-balance  font-sans text-4xl font-extrabold tracking-tight text-black/60 md:text-6xl">
+        <span className="relative z-10 "> Ready to Build?  </span>
 <PointerHighlight
-            rectangleClassName="bg-blue-100 dark:bg-[#EB9D2A]/80 border-blue-300 dark:border-[#9F690E] p-2 leading-loose "
+            rectangleClassName="bg-blue-100 dark:bg-[#EB9D2A]/80  dark:border-[#9F690E] p-2 leading-loose "
             pointerClassName="text-black-500 h-5 w-5"
             containerClassName="inline-block mx-1"
             >
-            <span className="relative z-10 "> Ready to Build? </span>
+
+            <span className="relative z-10 ">Think It, </span>
           </PointerHighlight>
+            <span className="relative z-10 ">Get It! </span>
         </div>
 
         <AIInput type="initial"  />

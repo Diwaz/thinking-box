@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Plus, Paperclip, Globe, Lock, Mic, ArrowUp } from "lucide-react"
+import { Plus, Paperclip, Globe, Lock, Mic, ArrowUp, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import handleRequest from "@/utils/request"
 import { FileNode } from "./fileTree"
@@ -22,7 +22,6 @@ type InputProps = {
 export function AIInput({type,projectId,userId,changeFileState,setMessages}:InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
-  const [isPublic, setIsPublic] = useState(true)
 
 
 
@@ -48,7 +47,7 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
         userId,
       }
         }
-        setMessages(prev => [...prev,
+        setMessages!(prev => [...prev,
           {
             content: value,
             from:From.USER 
@@ -61,7 +60,7 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
 
       sessionStorage.removeItem(`project_URL_${projectId}`);
       // console.log(sessionStorage.getItem(`project_tree_${projectId}`));
-      changeFileState([]);
+      changeFileState!([]);
 
 
     }
@@ -88,72 +87,10 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
         />
           {type === "secondary" ? (
 
-        <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="mt-3 flex items-center justify-end gap-3">
 
-          {/* Left controls */}
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full border border-border/50 bg-background/40 hover:bg-background/60"
-              aria-label="Add"
-            >
-              <Plus className="h-4 w-4 text-foreground/80" />
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-8 rounded-full border border-border/50 bg-background/40 px-3 text-foreground/80 hover:bg-background/60"
-              aria-label="Attach a file"
-            >
-              <Paperclip className="mr-0 lg:mr-2 h-4 w-4 " />
-              <div className="hidden lg:block">
-              Attach
-
-              </div>
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setIsPublic((v) => !v)}
-              className="h-8 rounded-full border border-border/50 bg-background/40 px-3 text-foreground/80 hover:bg-background/60"
-              aria-pressed={isPublic}
-              aria-label={isPublic ? "Set project to private" : "Set project to public"}
-            >
-              {isPublic ? (
-                <>
-                  <Globe className="mr-0 lg:mr-2 h-4 w-4" /> 
-                  
-                                <div className="hidden lg:block">
-              Public
-
-              </div>
-                </>
-              ) : (
-                <>
-                  <Lock className="mr-0 lg:mr-2 h-4 w-4" /> 
-              <div className="hidden lg:block">
-              Private
-
-              </div>
-                </>
-              )}
-            </Button>
-          </div>
-          {/* Right controls */}
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full border border-border/50 bg-background/40 hover:bg-background/60"
-              aria-label="Voice input"
-            >
-              <Mic className="h-4 w-4 text-foreground/80" />
-            </Button>
+           
             <Button
               type="button"
               className="h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
@@ -162,7 +99,7 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
                 handleSubmit(type);
                  }}
             >
-              <ArrowUp className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -175,13 +112,13 @@ export function AIInput({type,projectId,userId,changeFileState,setMessages}:Inpu
          
             <Button
               type="button"
-              className="h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              className="h-9 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               aria-label="Send"
               onClick={() => {
                 handleSubmit(type);
                  }}
             >
-              <ArrowUp className="h-4 w-4" />
+              Generate <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react'
-import { Codesandbox } from 'lucide-react';
+import { Codesandbox, Copy, SquareArrowOutUpRight } from 'lucide-react';
 import { Code,Globe,ChevronLeft,ChevronRight,LaptopMinimalCheck,ScreenShare,RotateCcw,Download,Ellipsis} from "lucide-react"
 import {
   Tabs,
@@ -21,6 +21,12 @@ import AiMsgBox from '@/components/aiMessageBox';
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 import { DotLottiePlayer } from '@dotlottie/react-player';
 import Image from 'next/image';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
+import { Separator } from '@/components/ui/separator';
 
 export enum From {
   USER,
@@ -255,12 +261,18 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
 
   return (
     <div className='px-1'>
-        <div className="navbar h-10  flex gap-2 p-2  ">
+        <div className="navbar items-center  flex gap-5 h-15 bg-[#1F1F1F] p-5 ">
     <Codesandbox className='w-6 h-6'/>
-    / {projectTitle}
+  <Separator orientation='vertical'/> 
+   <div className=' h-full  '>
+    {projectTitle}
+    </div> 
         </div>
-        <div className="chatWrapper  flex h-[calc(100vh-40px)] gap-2  ">
-            <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end ">
+        <div className="chatWrapper  flex h-[calc(100vh-60px)] gap-2  ">
+            <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel defaultSize={35} minSize={25} className='flex flex-col justify-en items-center'>
+
+            <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
                   <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10 '>
                   
                     {messages.length > 0 ? (
@@ -326,51 +338,39 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
                     <AIInput type="secondary" projectId={id} userId={'a770b0b5-2bdc-49e3-9795-f887703803fa'} changeFileState={setFileTree} setMessages={setMessages}/>
                 </div>
             </div>
-            <div className="previewSection flex-[65%] border-1 border-[#2d2d2d] rounded-sm h-full  flex-col ">
+
+            </ResizablePanel>
+                    <ResizableHandle withHandle className='hover:bg-[#64E6FB]'/>
+            <ResizablePanel defaultSize={65} minSize={30}>
+
+            <div className="previewSection  flex-[65%]  border-r-1  border-[#2d2d2d]  h-full  flex-col ">
 
         <Tabs defaultValue="preview" className='h-full'>
 
-                <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10">
-         <TabsList>
+                <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10 justify-between">
+         <TabsList className=''>
           <TabsTrigger value="editor">
             <Code/>
           </TabsTrigger>
           <TabsTrigger value="preview">
             <Globe/>
           </TabsTrigger>
+
+
         </TabsList>
-                   <div className='flex  border-2 border-[#2d2d2d] justify-between bg-[#1a1a1a]  items-center px-2 rounded-sm w-full h-7'>
-                    <div className="sec1 flex items-center  gap-1 ">
-
-                   <div>
-            <ChevronLeft className='w-3 h-3 '/>
-                    </div> 
-                   <div>
-                    <ChevronRight className='w-3 h-3'/> 
-                    </div> 
-                   <div>
-                    <LaptopMinimalCheck className='w-3 h-3'/>
-                    </div> 
-                   <div className='text-[10px] ml-0.5 lg:text-sm'>/ localhost:3000</div> 
-                    </div>
-                    <div className="sec2 flex items-center  gap-1">
-
-                   <div>
-                    <ScreenShare className='w-3 h-3'/> 
-                    </div> 
-                   <div>
-                    <RotateCcw className='w-3 h-3'/>
-                    </div> 
-                    </div>
-                   </div>
-                   <div className='flex gap-5'>
-                    <div>
-                        <Download className='w-5 h-5'/>
-                    </div>
-                    <div>
-                        <Ellipsis className='w-5 h-5'/>
-                    </div>
-                   </div>
+        <div className='flex gap-5 px-2 items-center justify-center'>
+          <div className='hover:bg-[#1F1F1F] px-1 rounded-sm cursor-pointer'>
+<Copy width={15}/>   
+          </div>
+          <div className='hover:bg-[#1F1F1F] px-1 rounded-sm cursor-pointer'>
+            <a href={`${projectUri}`} target='_blank' rel='noopener noreferrer'>
+ <SquareArrowOutUpRight width={15} />
+            </a>
+ </div>
+ 
+        </div>
+             
+                
         </div>
                 <div className="iFrame  flex flex-1 flex-col">
         <TabsContent value="editor" >
@@ -465,7 +465,11 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
                 </div>
       </Tabs>
             </div>
+            </ResizablePanel>
+            </ResizablePanelGroup>
         </div>
+        {/* end of chat wrapper */}
+
     </div>
   )
 }

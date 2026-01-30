@@ -107,6 +107,27 @@ const createPromptParser = baseProjectParser.extend({
   
   prompt: z.string().min(1,{message:"String must be at least 5 character long"})
 })
+app.get('/project/list',async(require,res)=>{
+  const id = 'a770b0b5-2bdc-49e3-9795-f887703803fa';
+
+  if (!id){
+    return res.status(400).json({
+      success: false,
+      message: "Cannot retrieved Id"
+    })
+  }
+  const response = await prisma.project.findMany({
+    where:{
+      userId:id
+    }
+  })
+
+  console.log("response",response); 
+  return res.status(200).json({
+    success: true,
+    projects: response 
+  })
+})
 app.post('/project',async(req,res)=>{
   try{
     
@@ -136,6 +157,7 @@ app.get("/project/:id",async(req,res)=>{
     const projectData = await prisma.project.findFirst({
       where: {
         id
+        // userId
       },
       select:{
         id:true,
@@ -149,7 +171,15 @@ app.get("/project/:id",async(req,res)=>{
         }
       }
     })
-    res.status(200).json(projectData);
+
+    if (!projectData){
+      return res.status(404).json({
+        status:false,
+        error: "Project Not Found"
+      })
+    }
+
+    return res.status(200).json(projectData);
 
   }catch(err){
     console.log("err",err)
