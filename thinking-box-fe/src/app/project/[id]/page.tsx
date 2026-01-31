@@ -1,26 +1,11 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react'
-import {  Codesandbox, Command, Copy, SquareArrowOutUpRight } from 'lucide-react';
-import { Code,Globe} from "lucide-react"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+import {  Codesandbox, Command } from 'lucide-react';
 
-} from "@/components/ui/tabs"
-import { AIInput } from '@/components/ai-input';
 import handleRequest from '@/utils/request';
 import dynamic from 'next/dynamic';
 
-import {buildFileTree, FileNode, FileTree} from '@/components/fileTree';
-import { CodeEditor } from '@/components/codeEditor';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import AiMsgBox from '@/components/aiMessageBox';
-import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
-import { DotLottiePlayer } from '@dotlottie/react-player';
-import Image from 'next/image';
+import {buildFileTree, FileNode} from '@/components/fileTree';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -29,10 +14,13 @@ import {
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth-client';
+import { ChatWrapper } from '@/components/chatWrapper';
+import { PreviewWrapper } from '@/components/previewPanel';
 export enum From {
   USER,
   ASSISTANT
 }
+
 
 
 
@@ -65,29 +53,8 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
   const userId = session?.user.id;
 
 
-  // useEffect(()=>{
-  //   const treeData = sessionStorage.getItem(`project_tree_${id}`)
+ 
 
-  //   if (treeData){
-  //     console.log("length of tree ",JSON.parse(treeData))
-  //     setFileTree(JSON.parse(treeData));
-  //   }
-  // },[])
-  const getExtension = (fileName:string): string=>{
-    console.log("filename received in getExtension",fileName)
-    const extension = fileName.split(".").pop()?.toLowerCase();
-    if (extension==="jsx" || extension==="tsx" || extension==="js" || extension==="ts"){
-      return 'react';
-    }else if(extension==="css"){
-      return 'css';
-    }else if (extension==="html"){
-      return "html"
-    }
-    else{
-      return 'rust'
-    }
-
-  }
   useEffect(()=>{
     if (loaded.current) return ;
     loaded.current = true;
@@ -285,203 +252,13 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
         <div className="chatWrapper  flex h-[calc(100vh-60px)] gap-2  ">
             <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={35} minSize={25} className='flex flex-col justify-end w-full'>
-
-            <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full ">
-                  <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10   '>
-                  
-                    {messages.length > 0 ? (
-                    <div className="aiMsg flex flex-col gap-5   ">
-                     {
-  messages.map((item, i) => (
-     <>
-      {
-        item.from == From.USER ? (
-          <div key={i} className=' flex flex-col w-full items-end gap-2 '>
-   <Avatar className='w-7 h-7 relative'>
-      <AvatarImage
-        src="https://vercel.com/api/www/avatar/eKRgDWQIpnvG1GmMj4z6XZFr"
-        alt="@shadcn"
-        className='rounded-xl'
-      />
-      <AvatarFallback>TB</AvatarFallback>
-    </Avatar>
-            <div className='bg-[#1F1F1F]  flex justify-end p-4 rounded-lg'>
-
-          {item.content}
-            </div>
-          </div>
-        ):(
-          <div key={i}>
-            {/* {item.content} */}
-           <AiMsgBox message={item}/> 
-          </div>
-        )
-      }
-      </> 
-  ))
-}
-  {createdFile.length > 0 ? (
-    <div>{createdFile.map((file,indx)=>{
-      const fileType = getExtension(file);
-      return (
-        <div key={indx} className=' p-2 flex flex-col gap-2 m-2  w-40 bg-[#121212] hover:border-[#0070F3] border-1 rounded-sm cursor-pointer text-sm font-bold  '>
-          <div>Created:</div>
-          
-      <div className='flex items-center  gap-2 text-sm font-light'>
-        <Image src={`/${fileType}.png`} width={20} height={5} alt={`${fileType}`}/>
-        <span className='text-[#959595]'>src/</span>
-        {file}
-      </div>
-        </div>
-      )
-    })}</div>
-  ):(
-    <div></div>
-  )}
-          {/* <div className='loader'></div> */}
-                     
-                    </div>
-                    ):(
-                      <div>Empty</div>
-                    )}
-
-                
-                 
-                    </div> 
-                <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]  '>
-                    <AIInput type="secondary" projectId={id}  changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} />
-                </div>
-            </div>
-
+     <ChatWrapper messages={messages} createdFile={createdFile} projectId={id} setFileTree={setFileTree} setMessages={setMessages} IsGenerationloading={IsGenerationloading} /> 
             </ResizablePanel>
                     <ResizableHandle withHandle className='hover:bg-[#64E6FB]'/>
             <ResizablePanel defaultSize={65} minSize={30}>
 
-            <div className="previewSection  flex-[65%]  border-r-1  border-[#2d2d2d]  h-full  flex-col ">
-
-        <Tabs defaultValue="preview" className='h-full'>
-
-                <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10 justify-between">
-         <TabsList className=''>
-          <TabsTrigger value="editor">
-            <Code/>
-          </TabsTrigger>
-          <TabsTrigger value="preview">
-            <Globe/>
-          </TabsTrigger>
-
-
-        </TabsList>
-        {/* <div className='text-sm bg-[#1F1F1F] p-2 rounded-sm px-5'>
-          {projectTitle}
-        </div> */}
-        <div className='flex gap-5 px-2 items-center justify-center'>
-          <div className=' px-1 rounded-sm cursor-pointer'>
-<Copy width={15} className='text-[#949494] hover:text-white'/>   
-          </div>
-          <div className=' px-1 rounded-sm cursor-pointer'>
-            <a href={`${projectUri}`} target='_blank' rel='noopener noreferrer'>
- <SquareArrowOutUpRight width={15} className='text-[#949494] hover:text-white'/>
-            </a>
- </div>
- 
-        </div>
-             
-                
-        </div>
-                <div className="iFrame  flex flex-1 flex-col">
-        <TabsContent value="editor" >
-          <div className='flex '>
-                    <div className='flex flex-col px-2 flex-[0_0_25%]'>
-                      {
-                        isFileTreeLoading ? (
-                      <div className='flex flex-col gap-2'>
-
-                      <div className='flex gap-2'>
-                        <Skeleton className='h-3 w-3'/>
-                        <div className='flex flex-col gap-2'>
-                        <Skeleton className='h-3 w-20'/>
-                        <Skeleton className='h-3 w-15'/>
-                        <Skeleton className='h-3 w-20'/>
-
-                        </div>
-
-                      </div>
-                      <div className='flex gap-2'>
-                        <Skeleton className='h-3 w-3'/>
-                        <div className='flex flex-col gap-2'>
-                        <Skeleton className='h-3 w-20'/>
-                        <Skeleton className='h-3 w-20'/>
-                        <Skeleton className='h-3 w-15'/>
-
-                        </div>
-
-                      </div>
-                      <div className='flex gap-2'>
-                        <Skeleton className='h-3 w-3'/>
-                        <div className='flex flex-col gap-2'>
-                        <Skeleton className='h-3 w-20'/>
-                        <Skeleton className='h-3 w-20'/>
-                        <Skeleton className='h-3 w-15'/>
-
-                        </div>
-
-                      </div>
-                         <div className='flex gap-2'>
-                        <Skeleton className='h-3 w-3'/>
-                        <div className='flex flex-col gap-2'>
-                        <Skeleton className='h-3 w-20'/>
-                        <Skeleton className='h-3 w-15'/>
-                        <Skeleton className='h-3 w-20'/>
-
-                        </div>
-
-                      </div>
-                      </div>) : ( <div>
-                        <FileTree nodes={fileTree} onFileClick={(file)=>setSelectedFile(file)}/>
-                      </div>)
-                      }
-                     
-
-                    </div>
-      {/* <Editor height="90vh"  className='flex flex-[0_0_100%]  ' defaultLanguage="javascript" theme='vs-dark' defaultValue="// some comment" /> */}
-      <CodeEditor file={selectedFile} />
-          </div>
-        </TabsContent>
-        <TabsContent value="preview">
-          <div className='h-full'>
-         {
-            linkArrived  ?
-                        (<iframe src={`${projectUri}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
-              <div className=' h-full flex justify-center items-center'>
-                      <Card className="w-full max-w-xl ">
-      <CardHeader>
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
-      </CardHeader>
-      <CardContent>
-
-        <div className="bg-[#252525] rounded-sm w-full flex justify-center items-center" >
-                                                <DotLottiePlayer
-                                                src={`${thinking ? "/plane.lottie" : building ? "/cube.lottie" : "/loading.lottie"}`}
-                                                loop
-                                                autoplay
-                                                style={{ width: '200px', height: '200px' }}
-                                                className='lg:w-[400px] lg:h-[400px]'
-                                            />
-          </div>
-      </CardContent>
-    </Card>
-              </div>
-            )
-          }
-
-            {/* <iframe src={`https://${response}`}  width="100%" height="100%"></iframe> */}
-          </div>
-        </TabsContent>
-                </div>
-      </Tabs>
-            </div>
+<PreviewWrapper projectUri={projectUri} isFileTreeLoading={isFileTreeLoading} fileTree={fileTree} setSelectedFile={setSelectedFile} selectedFile={selectedFile} linkArrived={linkArrived} thinking={thinking} building={building}  />
+            {/* End of preview section */}
             </ResizablePanel>
             </ResizablePanelGroup>
         </div>

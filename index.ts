@@ -392,6 +392,7 @@ app.post("/prompt",requireAuth,async (req,res)=>{
     
     const projectState = globalStore.get(userId);
     if (!projectState?.has(projectId)){
+
       globalStore.get(userId)?.set(projectId,{
         messages:[],
         llmCalls:0,
