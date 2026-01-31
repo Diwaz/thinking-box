@@ -118,13 +118,13 @@ export const PreviewWrapper = ({projectUri,isFileTreeLoading,fileTree,setSelecte
          {
             linkArrived  ?
                         (<iframe src={`${projectUri}`} frameBorder="0" width="100%" height="100%"></iframe>) : (
-              <div className=' h-full flex justify-center items-center'>
+              <div className=' h-full flex justify-center items-center p-4'>
                       <Card className="w-full max-w-xl ">
       <CardHeader>
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-4 w-1/2" />
       </CardHeader>
-      <CardContent>
+      <CardContent >
 
         <div className="bg-[#252525] rounded-sm w-full flex justify-center items-center" >
                                                 <DotLottiePlayer

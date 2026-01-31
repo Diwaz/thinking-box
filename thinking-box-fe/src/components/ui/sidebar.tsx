@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
+import { Codesandbox, PanelLeftIcon } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -24,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { TeamSwitcher } from "../team-switcher"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -187,7 +188,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+          className="bg-transparent backdrop-blur-lg text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -278,6 +279,40 @@ function SidebarTrigger({
     </Button>
   )
 }
+function SidebarTriggerCustom({
+  className,
+  onClick,
+  ...props
+}: React.ComponentProps<typeof Button>) {
+  const { toggleSidebar } = useSidebar()
+
+  return (
+    <Button
+      data-sidebar="trigger"
+      data-slot="sidebar-trigger"
+      variant="ghost"
+      size="icon"
+      className={cn("size-10 w-full p-2 flex sm:hidden", className)}
+      onClick={(event) => {
+        onClick?.(event)
+        toggleSidebar()
+      }}
+      {...props}
+    >
+      
+  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+            <Codesandbox className="size-4" />
+      {/* <PanelLeftIcon /> */}
+          </div>
+<div className="grid flex-1 text-left text-sm leading-tight">
+            <span className="truncate font-medium">{"Thinking-box"}</span>
+            {/* <span className="truncate text-xs">{"Think Build Ship"}</span> */}
+          </div>
+      <span className="sr-only">Toggle Sidebar</span>
+    </Button>
+  )
+}
+
 
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   const { toggleSidebar } = useSidebar()
@@ -723,4 +758,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  SidebarTriggerCustom
 }

@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 
 import {
   SidebarProvider,
+  SidebarTriggerCustom,
 } from "@/components/ui/sidebar"
 import SignIn from "@/components/sign-in";
 
@@ -33,21 +34,26 @@ export default function Home() {
       </DitherShader>
     <SidebarProvider defaultOpen={true}>
       <AppSidebar  />
-       
       <section className="absolute  top-0 h-full  w-full   mx-auto flex  flex-col  justify-center items-center  text-center md:pt-44">
+        <div className=" absolute top-0 left-0">
 
-    <div className=" flex flex-col p-5 w-[70%] gap-8 items-center ">
+    <SidebarTriggerCustom />
+    
+        </div>
+
+    <div className=" flex flex-col p-5 w-full sm:w-[70%] gap-8 items-center ">
 
         <div className="text-balance  font-sans text-4xl font-extrabold tracking-tight text-black/60 md:text-6xl">
-        <span className="relative  ">Get ready to  </span>
+        <span className="relative  ">THINK   </span>
 <PointerHighlight
             rectangleClassName="bg-blue-100 dark:bg-[#EB9D2A]/80  dark:border-[#9F690E] p-2 leading-loose "
             pointerClassName="text-black-500 h-5 w-5"
             containerClassName="inline-block mx-1"
             >
 
-            <span className="relative z-10 ">build! </span>
+            <span className="relative z-10 ">BUILD </span>
           </PointerHighlight>
+            <span className="relative z-10 "> SHIP </span>
         </div>
 
         <AIInput type="initial"  />

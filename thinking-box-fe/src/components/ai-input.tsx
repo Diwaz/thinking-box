@@ -111,7 +111,7 @@ export function AIInput({type,projectId,changeFileState,setMessages,loadingState
         />
           {type === "secondary" ? (
 
-        <div className="mt-3 flex items-center justify-end gap-3">
+        <div className=" flex items-center justify-end gap-3">
 
           <div className="flex items-center gap-2">
            
@@ -137,7 +137,7 @@ export function AIInput({type,projectId,changeFileState,setMessages,loadingState
         </div>
           ):(
 
-        <div className="mt-3 flex items-center justify-end">
+        <div className=" flex items-center justify-end">
 
 
           <div className="flex items-center gap-2">
