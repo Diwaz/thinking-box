@@ -23,11 +23,10 @@ type InputProps = {
 
 export const PreviewWrapper = ({projectUri,isFileTreeLoading,fileTree,setSelectedFile,selectedFile,linkArrived,thinking,building}:InputProps) => {
   return (
-            <div className="previewSection  flex-[65%]  border-r-1  border-[#2d2d2d]  h-full  flex-col ">
 
-        <Tabs defaultValue="preview" className='h-full'>
+        <Tabs defaultValue="preview" className='h-full gap-0'>
 
-                <div className="navPreview h-15 border-b-1 p-2 flex items-center gap-10 justify-between">
+                <div className="navPreview  border-1 lg:border-b-1 lg:border-0  p-1 flex items-center gap-10 justify-between">
          <TabsList className=''>
           <TabsTrigger value="editor">
             <Code/>
@@ -147,7 +146,6 @@ export const PreviewWrapper = ({projectUri,isFileTreeLoading,fileTree,setSelecte
         </TabsContent>
                 </div>
       </Tabs>
-            </div>
   )
 
 }

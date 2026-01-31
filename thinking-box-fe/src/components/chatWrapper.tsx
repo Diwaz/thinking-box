@@ -8,16 +8,12 @@ import { FileNode } from './fileTree';
 
 type InputProps = {
   messages: MessagePacket[],
-  projectId?: string,
   createdFile?:string[],
-  setFileTree?: React.Dispatch<React.SetStateAction<FileNode[]>>,
-  setMessages?: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
-  IsGenerationloading?:boolean,
 }
 
 
 
-export const ChatWrapper = ({messages,createdFile,projectId,setFileTree,setMessages,IsGenerationloading}:InputProps) => {
+export const ChatWrapper = ({messages,createdFile}:InputProps) => {
 
   const getExtension = (fileName:string): string=>{
     console.log("filename received in getExtension",fileName)
@@ -36,7 +32,6 @@ export const ChatWrapper = ({messages,createdFile,projectId,setFileTree,setMessa
   }
   return (
     
-            <div className="chatSection flex  flex-[35%]  items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full ">
                   <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10   '>
                   
                     {messages.length > 0 ? (
@@ -99,9 +94,6 @@ export const ChatWrapper = ({messages,createdFile,projectId,setFileTree,setMessa
                 
                  
                     </div> 
-                <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]  '>
-                    <AIInput type="secondary" projectId={projectId}  changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} />
-                </div>
-            </div>
+
   )
 }
