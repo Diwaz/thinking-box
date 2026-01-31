@@ -137,6 +137,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
       setFileTree(tree || []); 
       setLinkArrived(true);
       setProjectUri(existingData.uri);
+      setProjectTitle(title);
        }
 
       // console.log("existing data",existingData)

@@ -8,6 +8,9 @@ import { useRouter } from "next/navigation"
 import handleRequest from "@/utils/request"
 import { FileNode } from "./fileTree"
 import { From, MessagePacket } from "@/app/project/[id]/page"
+import { toast } from "sonner"
+import { unknown } from "zod"
+import { Spinner } from "./ui/spinner"
 
 
 type InputProps = {
@@ -16,12 +19,14 @@ type InputProps = {
   userId?:string,
   changeFileState?: React.Dispatch<React.SetStateAction<FileNode[]>>,
   setMessages?: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
+  loadingState?:boolean,
 }
 
 
-export function AIInput({type,projectId,changeFileState,setMessages}:InputProps) {
+export function AIInput({type,projectId,changeFileState,setMessages,loadingState}:InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
+  const [Isloading,setIsLoading] = useState(false);
 
 
 
@@ -34,31 +39,52 @@ export function AIInput({type,projectId,changeFileState,setMessages}:InputProps)
                     initialPrompt:value
                   }
                 }
-                await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`,options)
-                console.log("uuid",projectId)
-                router.push(`/project/${projectId}`)
+                try {
+                  setIsLoading(true);
+                   await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`,options)
+                  setIsLoading(false);
+                  console.log("uuid",projectId)
+                  router.push(`/project/${projectId}`)
+                }catch(err:unknown){
+                  if (err instanceof Error){
+                    toast.error(err.message)
+                  }else {
+                    toast.error("Something went wrong")
+                  }
+                  setIsLoading(false);
+                }
     }else{
         console.log("handle secondary")
-  const options = {
-      body :{
-        prompt: value,
-        projectId,
-      }
-        }
-        setMessages!(prev => [...prev,
-          {
-            content: value,
-            from:From.USER 
-          }
-        ]); 
-        setValue(""); 
-      await handleRequest("POST","http://localhost:8080/prompt",options)    
-      // console.log("cleared session storage")
-      sessionStorage.removeItem(`project_tree_${projectId}`)
+        setIsLoading(true);
+        try {
 
-      sessionStorage.removeItem(`project_URL_${projectId}`);
-      // console.log(sessionStorage.getItem(`project_tree_${projectId}`));
-      changeFileState!([]);
+          const options = {
+            body :{
+              prompt: value,
+              projectId,
+            }
+          }
+          setMessages!(prev => [...prev,
+            {
+              content: value,
+              from:From.USER 
+            }
+          ]); 
+          setValue(""); 
+          await handleRequest("POST","http://localhost:8080/prompt",options)    
+          // console.log("cleared session storage")
+          sessionStorage.removeItem(`project_tree_${projectId}`)
+          
+          sessionStorage.removeItem(`project_URL_${projectId}`);
+          // console.log(sessionStorage.getItem(`project_tree_${projectId}`));
+          changeFileState!([]);
+        }catch(err){
+          if (err instanceof Error){
+            toast.error(err.message);
+          }else{
+            toast.error("Something went wrong!")
+          }
+        }
 
 
     }
@@ -93,11 +119,19 @@ export function AIInput({type,projectId,changeFileState,setMessages}:InputProps)
               type="button"
               className="h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               aria-label="Send"
+              disabled={value.length < 1 || loadingState}
               onClick={() => {
                 handleSubmit(type);
                  }}
             >
-              <ArrowRight className="h-4 w-4" />
+              {loadingState ? (
+                  <Spinner/>
+                 )
+                : (
+
+                  <ArrowRight className="h-4 w-4" />
+                )
+                }
             </Button>
           </div>
         </div>
@@ -111,12 +145,22 @@ export function AIInput({type,projectId,changeFileState,setMessages}:InputProps)
             <Button
               type="button"
               className="h-9 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              disabled={value.length < 1 || Isloading}
               aria-label="Send"
               onClick={() => {
                 handleSubmit(type);
                  }}
             >
-              Generate <ArrowRight className="h-4 w-4" />
+              Generate
+                 {Isloading ? (
+                  <Spinner/>
+                 )
+                : (
+
+                  <ArrowRight className="h-4 w-4" />
+                )
+                }
+
             </Button>
           </div>
         </div>

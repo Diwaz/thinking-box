@@ -38,7 +38,7 @@ const prisma = new PrismaClient();
 
 const MessageState = z.object({
   messages: z.array(z.custom<BaseMessage>()).register(registry, MessagesZodMeta),
-  llmCalls: z.number().optional(),
+  llmCalls: z.number().default(0).optional(),
   hasSummazied: z.boolean().default(false),
   generatedFiles: z.array(z.object({
       fileName: z.string(),
@@ -155,6 +155,17 @@ app.post('/project',requireAuth,async(req,res)=>{
     const userId = userData.id;
     const body = validateSchema(createProjectParser)(req.body);
     const {projectId,initialPrompt}= body;
+    const checkLimit = await prisma.project.findMany({
+      where:{
+        userId
+      }
+    })
+    if (checkLimit.length > 10){
+      return res.status(409).json({
+        success: false,
+        message: "Project Limit Exceed!"
+      })
+    }
     const response =  await prisma.project.create({
       data:{
         id:projectId,
@@ -168,7 +179,10 @@ app.post('/project',requireAuth,async(req,res)=>{
     "msg":response
   });
   }catch(err){
-    return res.status(400).json(err)
+    return res.status(400).json({
+      success:false,
+      message: "Invalid Input"
+    })
   }
 
 })
@@ -396,6 +410,40 @@ app.post("/prompt",requireAuth,async (req,res)=>{
       // if (existingProject?.projectTitle?.length === 0){
       //   // db call
       // }
+      if (existingProject?.llmCalls! < 1){
+      const recheckProject = await prisma.project.findUnique({
+        where :{
+         id: projectId,
+         userId 
+        }, 
+        select:{
+        id:true,
+        title:true,
+        userId:true,
+        conversationHistory:true
+      }
+      })
+      if (recheckProject){
+          if (recheckProject.conversationHistory.length > 3){
+            return res.status(409).json({
+              success: false,
+              message: "LLM limit reached!"
+            })
+          }
+      } else{
+        return res.status(404).json({
+              success: false,
+              message: "Project Not found"
+        })
+      }
+      }
+      if (existingProject?.llmCalls! > 3){
+               return res.status(409).json({
+              success: false,
+              message: "LLM limit reached!"
+            })
+      }
+
        globalStore.get(userId)?.set(projectId,{
         messages:[],
         llmCalls:existingProject?.llmCalls,

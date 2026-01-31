@@ -60,6 +60,7 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
 const [projectTitle, setProjectTitle] = useState("New Project");
 const [createdFile,setCreatedFile]= useState<string[]>([]);
+const [IsGenerationloading,setIsGenerationLoading] = useState(true);
   const { data: session } = useSession();
   const userId = session?.user.id;
 
@@ -133,6 +134,7 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
           // console.log("msg we receive from socket",data.message)
           setDelivering(false);
           setLinkArrived(true);
+          setIsGenerationLoading(false);
           sessionStorage.setItem(`project_URL_${id}`,projectUri);
           const tree = buildFileTree(data.message.files)  
           sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
@@ -172,6 +174,7 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
 
         // RENDER-CONDITION: On follow-up prompt 
       }else{
+        setIsGenerationLoading(true);
         const messageHistory = projectData.conversationHistory; 
         const title = projectData.title;
         if (title.length > 0){
@@ -192,6 +195,7 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
     if (treeData && projectURL){
       // console.log("we here on sessionStorage",JSON.parse(treeData))
       // console.log("response uri",response)
+      setIsGenerationLoading(false);
       console.log("we already have project datas",projectURL)
       setFileTree(JSON.parse(treeData)); 
       // setResponse(projectURL);      
@@ -204,6 +208,7 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
     }else {
 
         // setIsFileTreeLoading(true);
+        setIsGenerationLoading(false);
         console.log("should not reach here on the 1st render")
       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
       const filesData = existingData.fileContent
@@ -344,7 +349,7 @@ const [createdFile,setCreatedFile]= useState<string[]>([]);
                  
                     </div> 
                 <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]  '>
-                    <AIInput type="secondary" projectId={id}  changeFileState={setFileTree} setMessages={setMessages}/>
+                    <AIInput type="secondary" projectId={id}  changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} />
                 </div>
             </div>
 
