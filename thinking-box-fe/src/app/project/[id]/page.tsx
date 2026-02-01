@@ -18,6 +18,7 @@ import { ChatWrapper } from '@/components/chatWrapper';
 import { PreviewWrapper } from '@/components/previewPanel';
 import { AIInput } from '@/components/ai-input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 export enum From {
   USER,
   ASSISTANT
@@ -117,7 +118,11 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
     
     const fetchData = async ()=>{
       const projectData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/${id}`)
-
+      console.log("why project not found",projectData)
+       if (projectData.error){
+          toast(projectData.error)
+          return ;
+        }
       console.log("initial prompt from server",projectData.conversationHistory)
 
         //RENDER-CONDITION: On First time screen
@@ -137,6 +142,10 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
           }
         }
           const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
+        if (res.error){
+          toast(res.error)
+          return ;
+        }
           console.log("res from pes",res)
           // setResponse(res.uri);
           setProjectUri(res.uri);
@@ -180,6 +189,10 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
         setIsGenerationLoading(false);
         console.log("should not reach here on the 1st render")
       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
+       if (existingData.error){
+          toast(existingData.error)
+          return ;
+        }
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
       sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
@@ -216,6 +229,10 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
       console.log("we go fetching again")
       setLinkArrived(false);
        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
+       if (existingData.error){
+          toast(existingData.error)
+          return ;
+        }
        const title = existingData.title
        if (title){
       const filesData = existingData.fileContent
@@ -239,7 +256,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
 
   return (
 <div className='px-1'>
-  <div className="navbar items-center flex gap-5 h-15 bg-[#1F1F1F] p-5">
+  <div className="navbar items-center flex gap-5 h-12 border-b-border border-b-1 bg-[#151315] p-5">
     <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg cursor-pointer'>
       <Link href={'/'}>
         <Codesandbox className='w-4 h-4'/>

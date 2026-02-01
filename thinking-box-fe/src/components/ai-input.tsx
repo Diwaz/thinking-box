@@ -9,21 +9,30 @@ import handleRequest from "@/utils/request"
 import { FileNode } from "./fileTree"
 import { From, MessagePacket } from "@/app/project/[id]/page"
 import { toast } from "sonner"
-import { unknown } from "zod"
 import { Spinner } from "./ui/spinner"
 
 
 type InputProps = {
   type: string,
   projectId?: string,
-  userId?:string,
+  userId?: string,
   changeFileState?: React.Dispatch<React.SetStateAction<FileNode[]>>,
   setMessages?: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
-  loadingState?:boolean,
+  loadingState?: boolean,
+  // onSuggestionSelected?: (prompt: string) => void,
+  suggestedValue?: string,
 }
 
 
-export function AIInput({type,projectId,changeFileState,setMessages,loadingState}:InputProps) {
+export function AIInput({
+  type,
+  projectId,
+  changeFileState,
+  setMessages,
+  loadingState,
+  // onSuggestionSelected,
+  suggestedValue,
+}: InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
   const [Isloading,setIsLoading] = useState(false);
@@ -41,7 +50,12 @@ export function AIInput({type,projectId,changeFileState,setMessages,loadingState
                 }
                 try {
                   setIsLoading(true);
-                   await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`,options)
+                   const hasProject =await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`,options)
+                   console.log("result of creation projec",hasProject)
+                   if (hasProject.error){
+          toast(hasProject.error)
+                 return ;
+                  }
                   setIsLoading(false);
                   console.log("uuid",projectId)
                   router.push(`/project/${projectId}`)
@@ -89,6 +103,14 @@ export function AIInput({type,projectId,changeFileState,setMessages,loadingState
 
     }
   }
+
+  // const handleSuggestionClick = (prompt: string) => {
+  //   setValue(prompt);
+  //   if (onSuggestionSelected) {
+  //     onSuggestionSelected(prompt);
+  //   }
+  // };
+
   return (
     <div className="w-full p-2">
       <div
@@ -97,7 +119,7 @@ export function AIInput({type,projectId,changeFileState,setMessages,loadingState
         aria-label="AI prompt composer"
       >
         <Textarea
-          value={value}
+          value={value || suggestedValue}
           onChange={(e) => setValue(e.target.value)}
           onInput={e => {
             const target = e.currentTarget;
@@ -105,7 +127,7 @@ export function AIInput({type,projectId,changeFileState,setMessages,loadingState
             target.style.height = Math.min(target.scrollHeight, 240) + "px"; // 240px = max-height
           }}
           placeholder="Explain your thought"
-          className="min-h-20 resize-none border-0  px-2 text-base leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-lg"
+          className="min-h-20 resize-none border-0  px-2 text-xs leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-base"
           aria-label="Prompt"
           style={{ maxHeight: "240px", overflowY: "auto" }}
         />
@@ -144,7 +166,7 @@ export function AIInput({type,projectId,changeFileState,setMessages,loadingState
          
             <Button
               type="button"
-              className="h-9 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              className="h-9 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer "
               disabled={value.length < 1 || Isloading}
               aria-label="Send"
               onClick={() => {

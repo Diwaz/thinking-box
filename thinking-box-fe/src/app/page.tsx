@@ -1,3 +1,4 @@
+"use client";
 import { AIInput } from "@/components/ai-input"
 import { Codesandbox } from 'lucide-react';
 import {DitherShader} from "@/components/ui/dither-shader";
@@ -9,9 +10,37 @@ import {
   SidebarTriggerCustom,
 } from "@/components/ui/sidebar"
 import SignIn from "@/components/sign-in";
+import { PromptSuggestions, type PromptSuggestion } from "@/components/prompt-suggestions";
+import { Zap, Code2, Palette } from 'lucide-react';
+import React from "react";
 
+const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
+  {
+    id: "1",
+    name: "Portfolio Site",
+    logo: <Code2 width={16} height={16} className="text-blue-400" />,
+    prompt: "Design a visually striking personal portfolio based on a modern bento-grid layout. The grid should feature distinct tiles including a large 'About Me' introduction, a scrolling marquee for skills, and a vertical 'Experience' timeline with expandable details. Include a dedicated 'Projects' gallery where hovering over cards reveals case study summaries, and finish with a minimal contact section."
+  },
+  {
+    id: "2",
+    name: "Ecommerce Portal",
+    logo: <Palette width={16} height={16} className="text-purple-400" />,
+    prompt: "Create a comprehensive e-commerce storefront layout. It should feature an immersive split-screen hero banner, followed by a 'New Arrivals' carousel. Include a robust product filtering sidebar next to a masonry-style product grid. Add a 'Trust & Reviews' section with customer testimonials, a newsletter subscription banner, and a detailed mega-footer with site navigation."
+  },
+  {
+    id: "3",
+    name: "Landing Page",
+    logo: <Zap width={16} height={16} className="text-amber-400" />,
+    prompt: "Build a high-conversion landing page structure. Start with a bold hero section containing a magnetic headline and dual call-to-action buttons. Follow with a 'How it Works' section using zig-zag text and image layouts, a three-tier pricing table with a 'Recommended' highlight, a scrolling logo wall of partners, and an FAQ accordion section at the bottom."
+  },
+];
 
 export default function Home() {
+  const [selectedSuggestion, setSelectedSuggestion] = React.useState<string | null>(null);
+
+  const handleSuggestionSelect = (prompt: string) => {
+    setSelectedSuggestion(prompt);
+  };
 
   return (
 <div className="h-screen overflow-hidden">
@@ -51,12 +80,21 @@ export default function Home() {
             containerClassName="inline-block mx-1"
             >
 
-            <span className="relative z-10 ">BUILD </span>
+            <span className="relative z-10 ">BUILD  </span>
           </PointerHighlight>
             <span className="relative z-10 "> SHIP </span>
         </div>
 
-        <AIInput type="initial"  />
+        <AIInput 
+              type="initial"
+              suggestedValue={selectedSuggestion!}
+            />
+
+            {/* Suggestions Component */}
+            <PromptSuggestions
+              suggestions={PROMPT_SUGGESTIONS}
+              onSuggestionClick={handleSuggestionSelect}
+            />
               </div>
       </section>
 
