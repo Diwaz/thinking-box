@@ -169,11 +169,11 @@ export  function  AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                   try {
 
                     const response = await handleRequest("GET","http://localhost:8080/project/list");
-                    console.log("response projectsss",response.action)
-                    if (response.error){
-                      toast(response.error)
-                      return ;
-                    }
+                    // console.log("response projectsss",response.action)
+                    // if (response.error){
+                    //   toast(response.error)
+                    //   return ;
+                    // }
                     const filteredProjects = response.projects.filter((item:Project)=>item.title);
                     setProjects(filteredProjects);
                   }catch(err:unknown){

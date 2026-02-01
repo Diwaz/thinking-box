@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth-client';
 import { Monitor, Tablet, Smartphone } from 'lucide-react';
+import { toast } from 'sonner';
 
 export enum From {
   USER,
@@ -51,7 +52,7 @@ const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
 const [projectTitle, setProjectTitle] = useState("New Project");
   const { data: session } = useSession();
   const userId = session?.user.id;
-  const [responsiveMode, setResponsiveMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [responsiveMode, setResponsiveMode] = useState<'desktop' | 'tablet' | 'mobile'>('mobile');
 
   const getIframeWidth = () => {
     switch(responsiveMode) {
@@ -75,30 +76,37 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         setIsFileTreeLoading(true);
     const treeData = sessionStorage.getItem(`project_tree_${id}`)
     const projectURL = sessionStorage.getItem(`project_URL_${id}`)
-
+    const localProjectTitle = sessionStorage.getItem(`project_Title_${id}`)
+    
     // RENDER-CONDITION: on next-time when user came back aftersometimes but within 30min or on same session
-    if (treeData && projectURL){
+    if (treeData && projectURL && localProjectTitle){
       console.log("we already have project datas",projectURL)
       setFileTree(JSON.parse(treeData)); 
       // setResponse(projectURL);      
       setProjectUri(projectURL)
-
-        setIsFileTreeLoading(false);
+      setProjectTitle(localProjectTitle) 
+      setIsFileTreeLoading(false);
         setLinkArrived(true);
 
         //RENDER-CONDITION: on next-time when user came back but after 30min on new session
-    }else {
-
+      }else {
+        
         // setIsFileTreeLoading(true);
         console.log("should not reach here on the 1st render")
-      const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase/history/${id}`)
-      const filesData = existingData.fileContent
-      const tree = buildFileTree(filesData)  
-      sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
-      sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
+        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase/history/${id}`)
+        // console.log("response projectsss",response.action)
+        if (existingData.error){
+          toast(existingData.error)
+          return ;
+        }
+        const filesData = existingData.fileContent
+        const tree = buildFileTree(filesData)  
+        sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
+        sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
+        sessionStorage.setItem(`project_Title_${id}`,existingData.title)
       setLinkArrived(true);
       setFileTree(tree || []); 
-
+      setProjectTitle(existingData.title)
       setIsFileTreeLoading(false);
       // console.log("existing data",existingData)
       // setResponse(existingData.uri)
@@ -127,6 +135,10 @@ const [projectTitle, setProjectTitle] = useState("New Project");
       console.log("we go fetching again")
       setLinkArrived(false);
        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase/history/${id}`)
+                      if (existingData.error){
+                      toast(existingData.error)
+                      return ;
+                    }
        const title = existingData.title
        if (title){
       const filesData = existingData.fileContent
@@ -163,12 +175,12 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     {projectTitle}
     </div> 
         </div>
-        <div className="chatWrapper  flex h-[calc(100vh-60px)] gap-2 p-5 ">
-            <div className="previewSection  flex-[100%]  border-2 rounded-2xl  border-[#2d2d2d]  h-full  flex-col ">
+        <div className="chatWrapper flex h-[calc(100vh-60px)] gap-2 p-5">
+            <div className="previewSection w-full border-2 rounded-2xl border-[#2d2d2d] h-full flex flex-col">
 
-        <Tabs defaultValue="preview" className='h-full'>
+        <Tabs defaultValue="preview" className='h-full flex flex-col'>
 
-                <div className="navPreview h-15  p-2 flex items-center gap-10  justify-between">
+                <div className="navPreview h-15 p-2 flex items-center gap-10 justify-between flex-shrink-0">
          <TabsList className=''>
           <TabsTrigger value="editor">
             <Code/>
@@ -179,7 +191,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         </TabsList>
 
         {/* Responsive Mode Toggle - Center */}
-        <div className='flex items-center gap-2 bg-[#252525] rounded-lg p-1'>
+        <div className='hidden sm:flex items-center gap-2 bg-[#252525] rounded-lg p-1'>
           <button
             onClick={() => setResponsiveMode('mobile')}
             className={`p-2 rounded-md transition-colors ${
@@ -220,45 +232,31 @@ const [projectTitle, setProjectTitle] = useState("New Project");
 
         {/* Copy and External Links - Right */}
         <div className='flex gap-5 px-2 items-center justify-center'>
-          <div className=' px-1 rounded-sm cursor-pointer'>
+          <div className='px-1 rounded-sm cursor-pointer'>
             <Copy width={15} className='text-[#949494] hover:text-white'/>   
           </div>
-          <div className=' px-1 rounded-sm cursor-pointer'>
+          <div className='px-1 rounded-sm cursor-pointer'>
             <a href={`${projectUri}`} target='_blank' rel='noopener noreferrer'>
               <SquareArrowOutUpRight width={15} className='text-[#949494] hover:text-white'/>
             </a>
           </div>
         </div>
-             
-                
         </div>
-        <div className="iFrame flex flex-1 flex-col">
-          <TabsContent value="editor" >
-            <div className='flex '>
-              <div className='flex flex-col px-2 flex-[0_0_25%]'>
+
+        <div className="iFrame flex flex-1 flex-col w-full overflow-hidden">
+          <TabsContent value="editor" className='m-0 p-0 h-full w-full'>
+            <div className='flex h-full w-full'>
+              <div className='flex flex-col px-2 flex-[0_0_25%] h-full overflow-y-auto'>
                 {
                   isFileTreeLoading ? (
                     <div className='flex flex-col gap-2'>
-
                       <div className='flex gap-2'>
                         <Skeleton className='h-3 w-3'/>
                         <div className='flex flex-col gap-2'>
                         <Skeleton className='h-3 w-20'/>
                         <Skeleton className='h-3 w-15'/>
                         <Skeleton className='h-3 w-20'/>
-
                         </div>
-
-                      </div>
-                      <div className='flex gap-2'>
-                        <Skeleton className='h-3 w-3'/>
-                        <div className='flex flex-col gap-2'>
-                        <Skeleton className='h-3 w-20'/>
-                        <Skeleton className='h-3 w-20'/>
-                        <Skeleton className='h-3 w-15'/>
-
-                        </div>
-
                       </div>
                       <div className='flex gap-2'>
                         <Skeleton className='h-3 w-3'/>
@@ -266,41 +264,48 @@ const [projectTitle, setProjectTitle] = useState("New Project");
                         <Skeleton className='h-3 w-20'/>
                         <Skeleton className='h-3 w-20'/>
                         <Skeleton className='h-3 w-15'/>
-
                         </div>
-
                       </div>
-                         <div className='flex gap-2'>
+                      <div className='flex gap-2'>
+                        <Skeleton className='h-3 w-3'/>
+                        <div className='flex flex-col gap-2'>
+                        <Skeleton className='h-3 w-20'/>
+                        <Skeleton className='h-3 w-20'/>
+                        <Skeleton className='h-3 w-15'/>
+                        </div>
+                      </div>
+                      <div className='flex gap-2'>
                         <Skeleton className='h-3 w-3'/>
                         <div className='flex flex-col gap-2'>
                         <Skeleton className='h-3 w-20'/>
                         <Skeleton className='h-3 w-15'/>
                         <Skeleton className='h-3 w-20'/>
-
                         </div>
-
                       </div>
-                      </div>) : ( <div>
-                        <FileTree nodes={fileTree} onFileClick={(file)=>setSelectedFile(file)}/>
-                      </div>)
-                      }
-                     
-
                     </div>
-      <CodeEditor file={selectedFile} />
-          </div>
-        </TabsContent>
+                  ) : (
+                    <div>
+                      <FileTree nodes={fileTree} onFileClick={(file)=>setSelectedFile(file)}/>
+                    </div>
+                  )
+                }
+              </div>
+              <div className='flex-1 h-full overflow-hidden'>
+                <CodeEditor file={selectedFile} />
+              </div>
+            </div>
+          </TabsContent>
 
-        <TabsContent value="preview">
-          <div className='h-full flex justify-center items-center bg-[#1F1F1F] rounded-b-2xl overflow-auto'>
+          <TabsContent value="preview" className='m-0 p-0 h-full w-full'>
+            <div className='h-full w-full flex bg-[#1F1F1F] overflow-auto'>
               {
                 linkArrived ? (
                   <div className='flex justify-center items-center w-full h-full'>
                     <div
-                      className='bg-white  overflow-hidden shadow-xl'
+                      className='bg-white overflow-hidden shadow-xl'
                       style={{
                         width: getIframeWidth(),
-                        height: responsiveMode === 'desktop' ? '100%' : 'auto',
+                        height: responsiveMode === 'desktop' ? '100%' : '812px',
                         transition: 'width 0.3s ease-in-out'
                       }}
                     >
@@ -308,29 +313,31 @@ const [projectTitle, setProjectTitle] = useState("New Project");
                         src={`${projectUri}`}
                         frameBorder="0"
                         width="100%"
-                        height={responsiveMode === 'desktop' ? '100%' : '812px'}
+                        height="100%"
                         style={{ display: 'block' }}
                       />
                     </div>
                   </div>
                 ) : (
-                  <Card className="w-full max-w-xl ">
-                    <CardHeader>
-                      <Skeleton className="h-4 w-2/3" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-[#252525] rounded-sm w-full flex justify-center items-center" >
-                        <DotLottiePlayer
-                          src={`${thinking ? "/plane.lottie" : building ? "/cube.lottie" : "/loading.lottie"}`}
-                          loop
-                          autoplay
-                          style={{ width: '200px', height: '200px' }}
-                          className='lg:w-[400px] lg:h-[400px]'
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className='w-full h-full flex justify-center items-center'>
+                    <Card className="w-full max-w-xl">
+                      <CardHeader>
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="bg-[#252525] rounded-sm w-full flex justify-center items-center">
+                          <DotLottiePlayer
+                            src={`${thinking ? "/plane.lottie" : building ? "/cube.lottie" : "/loading.lottie"}`}
+                            loop
+                            autoplay
+                            style={{ width: '200px', height: '200px' }}
+                            className='lg:w-[400px] lg:h-[400px]'
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 )
               }
             </div>
@@ -339,7 +346,6 @@ const [projectTitle, setProjectTitle] = useState("New Project");
       </Tabs>
             </div>
         </div>
-
     </div>
   )
 }
