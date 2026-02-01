@@ -33,6 +33,7 @@ import handleRequest from "@/utils/request"
 import SignIn from "./sign-in"
 import { getSession } from "better-auth/api"
 import { authClient } from "@/lib/auth-client"
+import { toast } from "sonner"
 
 // This is sample data.
 
@@ -165,10 +166,21 @@ export  function  AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         React.useEffect(()=>{
                 
                 const fetchProjects =async ()=>{
-                       const response = await handleRequest("GET","http://localhost:8080/project/list");
-                       console.log("response projectsss",response)
-                       const filteredProjects = response.projects.filter((item:Project)=>item.title);
-                        setProjects(filteredProjects);
+                  try {
+
+                    const response = await handleRequest("GET","http://localhost:8080/project/list");
+                    console.log("response projectsss",response.action)
+                    if (response.error){
+                      toast(response.error)
+                      return ;
+                    }
+                    const filteredProjects = response.projects.filter((item:Project)=>item.title);
+                    setProjects(filteredProjects);
+                  }catch(err:unknown){
+                    if (err instanceof Error){
+                      // toast(err)
+                    }
+                  }
                 }
 
                  fetchProjects();

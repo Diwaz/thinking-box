@@ -4,7 +4,7 @@ import { registry } from "@langchain/langgraph/zod";
 import { type BaseMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
 import { Sandbox } from '@e2b/code-interpreter'
-import express from 'express';
+import express, { type Request } from 'express';
 import cors from 'cors';
 import {  WebSocketServer } from "ws";
 import { PrismaClient } from "./generated/prisma";
@@ -17,11 +17,73 @@ import { MessageFrom } from "./generated/prisma";
 import {toNodeHandler} from 'better-auth/node'
 import { auth } from "./lib/auth";
 import { requireAuth } from "./authMiddleware";
+import {createClient} from 'redis';
+import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
+
+
 
 const app = express();
 
 const server = createServer(app);
 const wss = new WebSocketServer({server})
+
+
+const redisClient = createClient();
+
+redisClient.connect().catch(console.error);
+
+
+const sandboxLimiter = rateLimit({
+  store: new RedisStore({
+    sendCommand: async (...args: string[]) => {
+      if (!redisClient.isOpen) {
+        await redisClient.connect();
+      }
+      return redisClient.sendCommand(args);
+    },
+  }),
+  windowMs: 5 * 60 * 1000, // 30 minute
+  max: 5, // 10  attempts per  minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { 
+    action:"rate-limit",
+    error: "Too many attempts from this IP. Please try again later." 
+  },
+  // Custom key generator (optional)
+  keyGenerator: (req) => {
+    return req.user?.id || "unknown";
+  },
+});
+
+
+
+const strictLimiter = rateLimit({
+  store: new RedisStore({
+    sendCommand: async (...args: string[]) => {
+      if (!redisClient.isOpen) {
+        await redisClient.connect();
+      }
+      return redisClient.sendCommand(args);
+    },
+  }),
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 3, // 2  attempts per  minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { 
+    action:"rate-limit",
+    error: "Too many  attempts from this IP. Please try again later." 
+  },
+  // Custom key generator (optional)
+  keyGenerator: (req) => {
+    return req.user?.id || "unknown";
+  },
+});
+
+
+
 
 app.use(express.json());
 app.use(cors({
@@ -188,7 +250,7 @@ app.post('/project',requireAuth,async(req,res)=>{
 })
 
 app.all('/api/auth/{*any}',toNodeHandler(auth));
-app.get("/project/:id",requireAuth,async(req,res)=>{
+app.get("/project/:id",requireAuth,sandboxLimiter,async(req,res)=>{
   const {id} = await req.params;
   try {
     const userData = validateSchema(authUserParser)(req.user);
@@ -228,7 +290,7 @@ app.get("/project/:id",requireAuth,async(req,res)=>{
   }
 })
 
-app.get("/showcase/history/:id",requireAuth,async(req,res)=>{
+app.get("/showcase/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
   const {id} = await req.params;
   if (!id){
     return res.status(404).json({
@@ -291,7 +353,7 @@ app.get("/showcase/history/:id",requireAuth,async(req,res)=>{
 })
 
 
-app.get("/project/history/:id",requireAuth,async(req,res)=>{
+app.get("/project/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
   const {id} = await req.params;
   if (!id){
     return res.status(404).json({
@@ -359,12 +421,8 @@ app.get("/project/history/:id",requireAuth,async(req,res)=>{
 
 
 
-// const state:State ={
-//   messages:[],
-//   llmCalls:0,
-// }
 
-app.post("/prompt",requireAuth,async (req,res)=>{
+app.post("/prompt",requireAuth,strictLimiter,async (req,res)=>{
   try {
     const userData = validateSchema(authUserParser)(req.user);
     const userId = userData.id;
@@ -372,7 +430,27 @@ app.post("/prompt",requireAuth,async (req,res)=>{
     const {prompt,projectId} = body;
     console.log("reached here w/ prompt",prompt)
     // const prompt = await projectData.initialPropmt
-   
+    
+    const projectExist = await prisma.project.findUnique({
+      where:{
+        id: projectId,
+        userId
+      },
+      select:{
+        id:true,
+        title:true,
+        userId:true,
+        conversationHistory:true
+      }
+    })
+
+    if (!projectExist){
+      return res.status(404).json({
+        success: false,
+        message:"Project Not Found!"
+      })
+    }
+
     if (!globalStore.has(userId)){
       globalStore.set(userId,new Map());
       globalStore.get(userId)?.set(projectId,{
@@ -412,20 +490,9 @@ app.post("/prompt",requireAuth,async (req,res)=>{
       //   // db call
       // }
       if (existingProject?.llmCalls! < 1){
-      const recheckProject = await prisma.project.findUnique({
-        where :{
-         id: projectId,
-         userId 
-        }, 
-        select:{
-        id:true,
-        title:true,
-        userId:true,
-        conversationHistory:true
-      }
-      })
-      if (recheckProject){
-          if (recheckProject.conversationHistory.length > 3){
+
+      if (projectExist){
+          if (projectExist.conversationHistory.length > 3){
             return res.status(409).json({
               success: false,
               message: "LLM limit reached!"
@@ -491,12 +558,9 @@ app.post("/prompt",requireAuth,async (req,res)=>{
     
     conversationState.messages.push(new HumanMessage(prompt))
     runAgenticManager(userId,projectId,conversationState,clients,sdx);
-    // const result = await agent.invoke(projectState)
     
     
     res.status(200).json({
-      //  url:host,
-      // messages:result.messages,
       status:"processing",
       uri: `https://${host}`
     })
@@ -572,7 +636,7 @@ const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
 
 }
 
-wss.on("connection", (ws, req) => {
+wss.on("connection", (ws, req:Request) => {
   const params = new URLSearchParams(req.url.replace("/?", ""));
   const userId = params.get("userId");
   console.log("New WebSocket:", userId);

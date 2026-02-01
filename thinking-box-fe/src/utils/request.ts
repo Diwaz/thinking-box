@@ -25,12 +25,17 @@ const handleRequest = async (method:Method,url:string,options?:RequestOption) =>
     };
     console.log("config",config)
     const response: AxiosResponse = await axios(config);
+    
+    
     console.log("response from axios",response)
     return response.data;
   } catch (error:any) {
-    console.error(" handleRequest error:", error?.response || error);
+    console.error(" handleRequest error:", error);
+    if (error.response.data){
+      return  error.response.data 
+    }
     throw new Error(
-      error?.response?.data?.message ||
+       error?.response?.data.error || error?.response?.data?.message ||
         error.message ||
         "An error occurred while making the request"
     );

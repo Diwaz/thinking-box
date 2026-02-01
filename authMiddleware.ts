@@ -9,10 +9,14 @@ declare global {
         interface Request {
             user?: User;
             session?:Session;
+            rateLimit:RateLimit,
+            url: string
         }
     }
 }
-
+export interface RateLimit {
+    resetTime: number,
+}
 export const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const session = await auth.api.getSession({
         headers: fromNodeHeaders(req.headers)
