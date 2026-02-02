@@ -322,7 +322,7 @@ app.get("/showcase/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     }
     const title = projectData?.title;
 
-   const sandboxId = await getSandboxId(id);
+   const sandboxId = await getSandboxId(userId,id);
      if (!sandboxId){
       return res.status(404).json({
         error: "Unable to create Sandbox at the moment"
@@ -330,7 +330,7 @@ app.get("/showcase/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     }
 
   
-    const sdx = await Sandbox.connect(sandboxId);
+    const sdx = await Sandbox.connect(sandboxId,{timeoutMs:SANDBOX_TIMEOUT});
 
     const files = await getFiles(sdx);
 
@@ -389,7 +389,7 @@ app.get("/project/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     // if (projectData?.userId !== )
     const title = projectData?.title;
 
-   const sandboxId = await getSandboxId(id);
+   const sandboxId = await getSandboxId(userId,id);
      if (!sandboxId){
       return res.status(404).json({
         error: "Unable to create Sandbox at the moment"
@@ -397,7 +397,7 @@ app.get("/project/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     }
 
   
-    const sdx = await Sandbox.connect(sandboxId);
+    const sdx = await Sandbox.connect(sandboxId,{timeoutMs:SANDBOX_TIMEOUT});
 
     const files = await getFiles(sdx);
 
@@ -528,7 +528,7 @@ app.post("/prompt",requireAuth,strictLimiter,async (req,res)=>{
     }
     const conversationState:State = projectState?.get(projectId)!; 
       console.log("project state",conversationState)
-    const sandboxId = await getSandboxId(projectId);
+    const sandboxId = await getSandboxId(userId,projectId);
      if (!sandboxId){
       return res.status(404).json({
         error: "Unable to create Sandbox at the moment"
@@ -538,7 +538,7 @@ app.post("/prompt",requireAuth,strictLimiter,async (req,res)=>{
 
     // activeSanbox.set(projectId,payload)
   
-    const sdx = await Sandbox.connect(sandboxId);
+    const sdx = await Sandbox.connect(sandboxId,{timeoutMs:SANDBOX_TIMEOUT});
     const host = sdx.getHost(5173);
 
    try {
@@ -582,26 +582,34 @@ interface SandboxStore{
 const activeSanbox = new Map<string,SandboxStore>();
 const pendingCreations = new Map<string,Promise<string>>();
 
-const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
+const getSandboxId = async (userId: string,projectId:string): Promise<string | undefined> =>{
 
-  const hasObj = activeSanbox.has(projectId);
+  const hasObj = activeSanbox.has(userId);
 
   if (hasObj){
 
     const currentTime = Date.now();
-    const project = activeSanbox.get(projectId);
+    const project = activeSanbox.get(userId);
     const startTime = Number(project?.sandboxInitTime);
     if ( currentTime - startTime < SANDBOX_TIMEOUT){
       console.log(" Returning Existing active sandbox");
+      const sandboxId = activeSanbox.get(userId)?.sandboxId;
+      if (!sandboxId){
+        return undefined;
+      }
+      const sdx = await Sandbox.connect(sandboxId);
+       if (await isObjectExist(projectId)){
+         await loadProjectFromBucket(sdx,projectId) 
+      }
       return project?.sandboxId;
     }
     console.log("Deleting prev sandbox and creating new one ...");
-    activeSanbox.delete(projectId);
+    activeSanbox.delete(userId);
 
   }
-  if (pendingCreations.has(projectId)){
+  if (pendingCreations.has(userId)){
     console.log("Creation already in progress, Joining ...");
-    return await pendingCreations.get(projectId);
+    return await pendingCreations.get(userId);
   }
   const creationPromise = (async()=>{
       console.log("creating new sandbox creation...");
@@ -610,7 +618,7 @@ const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
       })
       const info = await sdx.getInfo();
 
-      activeSanbox.set(projectId,{
+      activeSanbox.set(userId,{
         sandboxId:info.sandboxId,
         sandboxInitTime: Date.now(),
       })
@@ -624,7 +632,7 @@ const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
   })();
 
   // Register the promise in pending map
-  pendingCreations.set(projectId,creationPromise);
+  pendingCreations.set(userId,creationPromise);
 
   try {
       return await creationPromise;
@@ -632,7 +640,7 @@ const getSandboxId = async (projectId: string): Promise<string | undefined> =>{
     console.log("Failed to create sandbox",err);
     throw err;
   }finally {
-    pendingCreations.delete(projectId);
+    pendingCreations.delete(userId);
   }
 
 }

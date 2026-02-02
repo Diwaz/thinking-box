@@ -42,6 +42,8 @@ useEffect(()=>{
 },[])
 
   const handleLogin = async ()=>{
+    // if (value.length > 0 ){
+    // }
 await signIn.social({
 									provider: "google",
 									callbackURL: "http://localhost:3000",
