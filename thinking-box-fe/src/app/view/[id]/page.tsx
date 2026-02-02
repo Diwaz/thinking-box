@@ -162,26 +162,26 @@ const [projectTitle, setProjectTitle] = useState("New Project");
   },[fileTree,id])
 
   return (
-    <div className='px-1'>
-        <div className="navbar items-center  flex gap-5 h-15 bg-[#1F1F1F] p-5 ">
-          <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg cursor-pointer'>
-            <Link href={'/'}>
-    <Codesandbox className='w-4 h-4'/>
-            </Link>
-          </div>
-  <Separator orientation='vertical' /> 
-   <div className='  bg-sidebar-primary  h-8 rounded-sm px-5 flex items-center gap-3 '>
-    <Command width={15} className=''/>
-    {projectTitle}
+    <div className='bg-[#05171C]'>
+       <div className="navbar items-center flex gap-5 h-12 border-b-border border-b-1 bg-[#05171C] p-5">
+    <div className='bg-[#05001E] text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg cursor-pointer'>
+      <Link href={'/'}>
+        <Codesandbox className='w-4 h-4'/>
+      </Link>
+    </div>
+    <Separator orientation='vertical'  /> 
+    <div  title={`${projectTitle}`} className='bg-[#05001E]  text-xs sm:text-sm h-8 rounded-sm px-5 flex items-center gap-3'>
+      <Command width={15} className=''/>
+      {projectTitle}
     </div> 
-        </div>
+  </div>
         <div className="chatWrapper flex h-[calc(100vh-60px)] gap-2 p-5">
-            <div className="previewSection w-full border-2 rounded-2xl border-[#2d2d2d] h-full flex flex-col">
+            <div className="previewSection w-full border-2 rounded-2xl border-border h-full flex flex-col">
 
         <Tabs defaultValue="preview" className='h-full flex flex-col'>
 
-                <div className="navPreview h-15 p-2 flex items-center gap-10 justify-between flex-shrink-0">
-         <TabsList className=''>
+                <div className="navPreview h-15 p-2 flex items-center gap-10 border-b justify-between flex-shrink-0">
+         <TabsList className='bg-[#05001E]'>
           <TabsTrigger value="editor">
             <Code/>
           </TabsTrigger>
@@ -196,7 +196,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
             onClick={() => setResponsiveMode('mobile')}
             className={`p-2 rounded-md transition-colors ${
               responsiveMode === 'mobile'
-                ? 'bg-[#0070F3] text-white'
+                ? 'bg-[#05001E] text-white'
                 : 'text-[#949494] hover:text-white'
             }`}
             title="Mobile View (375px)"
@@ -208,7 +208,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
             onClick={() => setResponsiveMode('tablet')}
             className={`p-2 rounded-md transition-colors ${
               responsiveMode === 'tablet'
-                ? 'bg-[#0070F3] text-white'
+                ? 'bg-[#05001E] text-white'
                 : 'text-[#949494] hover:text-white'
             }`}
             title="Tablet View (768px)"
@@ -220,7 +220,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
             onClick={() => setResponsiveMode('desktop')}
             className={`p-2 rounded-md transition-colors ${
               responsiveMode === 'desktop'
-                ? 'bg-[#0070F3] text-white'
+                ? 'bg-[#05001E] text-white'
                 : 'text-[#949494] hover:text-white'
             }`}
             title="Desktop View (100%)"
@@ -297,7 +297,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
           </TabsContent>
 
           <TabsContent value="preview" className='m-0 p-0 h-full w-full'>
-            <div className='h-full w-full flex bg-[#1F1F1F] overflow-auto'>
+            <div className='h-full w-full flex bg-[]  overflow-auto'>
               {
                 linkArrived ? (
                   <div className='flex justify-center items-center w-full h-full'>

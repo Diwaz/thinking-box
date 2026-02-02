@@ -82,7 +82,7 @@ const userId = session?.user.id;
         </div>
              {userId && <section className="bg-[#05171C] w-full flex justify-center ">
 
-              <div className="bg-[#05001E] rounded-lg p-5  backdrop-blur-xl  w-[85%] relative top-[-100px] ">
+              <div className="bg-[#05001E] rounded-lg p-5  backdrop-blur-xl w-[95%]  sm:w-[85%] relative top-[-100px] ">
               <ShowcaseProjects/> 
               </div>
               </section>}
