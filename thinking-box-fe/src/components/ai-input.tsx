@@ -197,14 +197,17 @@ await signIn.social({
         </div>
           ):(
 
-        <div className=" flex items-center justify-end">
+        <div className=" flex items-center justify-between">
 
-
+              <div className="font-bold">
+                {value.length}
+                <span className="text-muted-foreground font-light">/2000</span>
+              </div>
           <div className="flex items-center gap-2">
             {userId ? (<Button
               type="button"
               className="h-9 p-2 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer "
-              disabled={value.length < 1 || Isloading}
+              disabled={value.length < 1 || Isloading || value.length > 2000}
               aria-label="Send"
               onClick={() => {
                 handleSubmit(type);

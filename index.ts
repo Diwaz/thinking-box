@@ -290,7 +290,54 @@ app.get("/project/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     })
   }
 })
+app.get('/showcase',requireAuth,sandboxLimiter,async(req,res)=>{
 
+
+  try {
+    const showcaseProject = await prisma.showcase.findMany(
+      {
+        take: 2,
+      }
+    );
+
+    const publicProject = await prisma.project.findMany({
+      take: 2,
+      orderBy:{
+        createdAt:"desc" 
+      },
+      select:{
+        title: true,
+        id: true,
+        user:{
+          select:{
+            name: true,
+          }
+        }
+      } 
+    })
+
+    if (!showcaseProject || !publicProject){
+    res.status(404).json({
+      success: false,
+      error:"Something went wrong!"
+    })
+    }
+
+    return res.status(200).json({
+      success: true,
+      publicProject,
+      showcaseProject
+    })
+
+  }catch(err){
+      res.status(404).json({
+      success: false,
+      error:"Something went wrong!"
+    })
+  }
+
+
+})
 app.get("/showcase/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
   const {id} = await req.params;
   if (!id){

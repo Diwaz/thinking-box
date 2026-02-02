@@ -4,64 +4,34 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import  handleRequest  from '@/utils/request';
 import { Card } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 export interface ShowcaseProject {
   id: string;
   title: string;
-  description?: string;
   userName: string;
-  userImage?: string;
-  thumbnail: string;
-  viewedDate: string;
-  projectUri?: string;
+  thumbnail:string;
+}
+export interface RawShowcaseProject {
+  id: string;
+  title: string;
+  thumbnail:string;
+  user: {
+    name: string;
+  };
 }
 
-// Dummy data for now
-const DUMMY_PROJECTS: ShowcaseProject[] = [
-  {
-    id: "1",
-    title: "Apex Trader",
-    description: "Advanced trading dashboard with real-time analytics",
-    userName: "Design Studio",
-    userImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=Design",
-    thumbnail: "/tb-thumbnail.png",
-    viewedDate: "Viewed 4 days ago",
-    projectUri: "https://example.com/apex-trader"
-  },
-  {
-    id: "2",
-    title: "Simple Payments",
-    description: "Payment processing made easy",
-    userName: "Dev Team",
-    userImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=DevTeam",
-    thumbnail: "/tb-thumbnail.png",
-    viewedDate: "Viewed 31 Dec 2025",
-    projectUri: "https://example.com/simple-payments"
-  },
-  {
-    id: "3",
-    title: "Portfolio Site",
-    description: "Payment processing made easy",
-    userName: "Hesoyam",
-    userImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=DevTeam",
-    thumbnail: "/tb-thumbnail.png",
-    viewedDate: "Viewed 31 Dec 2025",
-    projectUri: "https://example.com/simple-payments"
-  },
-  {
-    id: "4",
-    title: "Ecommerece Portal",
-    description: "Payment processing made easy",
-    userName: "Andrew Matheus",
-    userImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=DevTeam",
-    thumbnail: "/tb-thumbnail.png",
-    viewedDate: "Viewed 31 Dec 2025",
-    projectUri: "https://example.com/simple-payments"
-  },
-];
+
+export interface PublicProject {
+  id:string,
+  userName:string,
+  title:string,
+  thumbnail:string;
+}
 
 export const ShowcaseProjects = () => {
-  const [projects, setProjects] = useState<ShowcaseProject[]>(DUMMY_PROJECTS);
+  const [showcaseProjects, setShowcaseProjects] = useState<ShowcaseProject[]>();
+  const [projects, setProjects] = useState<PublicProject[]>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,17 +40,34 @@ export const ShowcaseProjects = () => {
       setLoading(true);
       setError(null);
       try {
-        // const response = await handleRequest(
-        //   "GET",
-        //   `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase`
-        // );
-        // if (response.error) {
-        //   setError(response.error);
-        //   return;
-        // }
-        // setProjects(response.projects || DUMMY_PROJECTS);
+        const response = await handleRequest(
+          "GET",
+          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase`
+        );
         
-        setProjects(DUMMY_PROJECTS);
+   if (response.error){
+          toast(response.error)
+          return ;
+        }
+        const publicProject = response.publicProject.map((item:RawShowcaseProject)=>{
+          return {
+            id: item.id,
+            title: item.title,
+            userName: item.user.name ?? "Thinking-Box",
+            thumbnail:"/tb-thumbnail.png"
+          }
+        });
+        const showcaseProject = response.showcaseProject.map((item:PublicProject)=>{
+          return {
+            id:item.id,
+            title: item.title,
+            userName: "Thinking-box",
+            thumbnail:"/tb-thumbnail.png"
+          }
+        });
+        setProjects(publicProject);
+        setShowcaseProjects(showcaseProject);
+        
       } catch (err) {
         console.error("Failed to fetch showcase projects:", err);
         setError("Failed to load projects");
@@ -128,10 +115,57 @@ export const ShowcaseProjects = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {projects.map((project) => (
+            {showcaseProjects?.map((project) => (
               <a
                 key={project.id}
-                href={project.projectUri || "#"}
+                href={ "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group cursor-pointer"
+              >
+                <Card className="bg-[#05171C] hover:border-[#404040] border-[#05171C] overflow-hidden transition-all duration-300 h-full flex flex-col gap-1 p-0">
+                  {/* Thumbnail */}
+                  <div className="relative h-40 w-full overflow-hidden bg-[#252525]">
+                    <Image
+                      src={project.thumbnail}
+                      alt={project.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1F1F1F] via-transparent to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-300"></div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 p-3 flex flex-col justify-between">
+                    {/* User Info */}
+                    <div className="flex items-center gap-2">
+                      {/* Avatar */}
+                      <div
+                        className={`flex bg-[#05001E] items-center justify-center w-8 h-8 rounded-full flex-shrink-0`}
+                      >
+                        <span className="text-white font-bold text-xs">
+                          {getInitial(project.userName)}
+                        </span>
+                      </div>
+
+                      {/* User Details */}
+                      <div className="flex-1 min-w-0 flex flex-col items-start">
+                        <p className="text-xs font-medium text-white truncate">
+                          {project.title}
+                        </p>
+                        <p className="text-[10px] text-gray-500 truncate">
+                          {project.userName}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </a>
+            ))}
+            {projects?.map((project) => (
+              <a
+                key={project.id}
+                href={ "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group cursor-pointer"
