@@ -9,36 +9,14 @@ import {
   SidebarProvider,
   SidebarTriggerCustom,
 } from "@/components/ui/sidebar"
-import SignIn from "@/components/sign-in";
-import { PromptSuggestions, type PromptSuggestion } from "@/components/prompt-suggestions";
-import { Zap, Code2, Palette } from 'lucide-react';
 import React from "react";
-
-const PROMPT_SUGGESTIONS: PromptSuggestion[] = [
-  {
-    id: "1",
-    name: "Portfolio Site",
-    logo: <Code2 width={16} height={16} className="text-blue-400" />,
-    prompt: "Design a visually striking personal portfolio based on a modern bento-grid layout. The grid should feature distinct tiles including a large 'About Me' introduction, a scrolling marquee for skills, and a vertical 'Experience' timeline with expandable details. Include a dedicated 'Projects' gallery where hovering over cards reveals case study summaries, and finish with a minimal contact section."
-  },
-  {
-    id: "2",
-    name: "Ecommerce Portal",
-    logo: <Palette width={16} height={16} className="text-purple-400" />,
-    prompt: "Create a comprehensive e-commerce storefront layout. It should feature an immersive split-screen hero banner, followed by a 'New Arrivals' carousel. Include a robust product filtering sidebar next to a masonry-style product grid. Add a 'Trust & Reviews' section with customer testimonials, a newsletter subscription banner, and a detailed mega-footer with site navigation."
-  },
-  {
-    id: "3",
-    name: "Landing Page",
-    logo: <Zap width={16} height={16} className="text-amber-400" />,
-    prompt: "Build a high-conversion landing page structure. Start with a bold hero section containing a magnetic headline and dual call-to-action buttons. Follow with a 'How it Works' section using zig-zag text and image layouts, a three-tier pricing table with a 'Recommended' highlight, a scrolling logo wall of partners, and an FAQ accordion section at the bottom."
-  },
-];
+import { ShowcaseProjects } from "@/components/showcase-projects";
 
 export default function Home() {
 
 
   return (
+    <>
 <div className="h-screen overflow-hidden">
    <DitherShader
           src="https://images.unsplash.com/photo-1614728263952-84ea256f9679?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
@@ -92,15 +70,21 @@ export default function Home() {
 
         <AIInput 
               type="initial"
-            />
+              />
 
-           
               </div>
       </section>
 
     </SidebarProvider>
 
         </div>
+              <section className="bg-[#05171C] w-full flex justify-center ">
+
+              <div className="bg-[#05001E] rounded-lg p-5  backdrop-blur-xl  w-[95%] relative top-[-100px] ">
+              <ShowcaseProjects/> 
+              </div>
+              </section>
+              </>
   )
 }
 

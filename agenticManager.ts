@@ -629,6 +629,10 @@ async function inputValidation(state:State){
             action:"LLM_UPDATE",
             message:"Sorry your request cannot be proceed further please input relevant query"
           })
+
+          send({
+            action:"INVALID_INPUT",
+          })
         }
         
       }

@@ -111,6 +111,9 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
           setIsFileTreeLoading(false);
           setFileTree(tree || [])
           break;
+        case "INVALID_INPUT":
+          setIsGenerationLoading(false);
+          break;
       }
 
       
@@ -276,7 +279,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
         <div className="chatSection flex bg-[#05171C] flex-[35%] items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
           <ChatWrapper messages={messages} createdFile={createdFile} /> 
           <div className='w-full '>
-            <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} />
+            <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} setLinkArrived={setLinkArrived}/>
           </div>
         </div>
       </ResizablePanel>

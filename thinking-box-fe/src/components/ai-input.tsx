@@ -19,6 +19,7 @@ type InputProps = {
   userId?: string,
   changeFileState?: React.Dispatch<React.SetStateAction<FileNode[]>>,
   setMessages?: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
+  setLinkArrived?: React.Dispatch<React.SetStateAction<boolean>>;
   loadingState?: boolean,
   // onSuggestionSelected?: (prompt: string) => void,
 }
@@ -30,6 +31,7 @@ export function AIInput({
   changeFileState,
   setMessages,
   loadingState,
+  setLinkArrived,
 }: InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
@@ -87,9 +89,8 @@ await signIn.social({
                 }
     }else{
         console.log("handle secondary")
-        setIsLoading(true);
         try {
-
+          
           const options = {
             body :{
               prompt: value,
@@ -103,6 +104,7 @@ await signIn.social({
             }
           ]); 
           setValue(""); 
+          setIsLoading(true);
           await handleRequest("POST","http://localhost:8080/prompt",options)    
           // console.log("cleared session storage")
           sessionStorage.removeItem(`project_tree_${projectId}`)
@@ -110,12 +112,16 @@ await signIn.social({
           sessionStorage.removeItem(`project_URL_${projectId}`);
           // console.log(sessionStorage.getItem(`project_tree_${projectId}`));
           changeFileState!([]);
+          setLinkArrived!(false);
+
         }catch(err){
           if (err instanceof Error){
             toast.error(err.message);
           }else{
             toast.error("Something went wrong!")
           }
+
+          setIsLoading(false);
         }
 
 
