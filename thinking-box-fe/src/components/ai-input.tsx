@@ -21,6 +21,7 @@ type InputProps = {
   setMessages?: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
   setLinkArrived?: React.Dispatch<React.SetStateAction<boolean>>;
   loadingState?: boolean,
+ setLoadingState?: React.Dispatch<React.SetStateAction<boolean>>;
   // onSuggestionSelected?: (prompt: string) => void,
 }
 
@@ -32,6 +33,7 @@ export function AIInput({
   setMessages,
   loadingState,
   setLinkArrived,
+  setLoadingState,
 }: InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
@@ -70,6 +72,7 @@ await signIn.social({
                 }
                 try {
                   setIsLoading(true);
+                  setLoadingState?.(true);
                    const hasProject =await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`,options)
                    console.log("result of creation projec",hasProject)
                    if (hasProject.error){
@@ -85,7 +88,9 @@ await signIn.social({
                   }else {
                     toast.error("Something went wrong")
                   }
+                  // duplicate for testing
                   setIsLoading(false);
+                  setLoadingState?.(false);
                 }
     }else{
         console.log("handle secondary")
@@ -104,15 +109,24 @@ await signIn.social({
             }
           ]); 
           setValue(""); 
+          setLoadingState?.(true);
           setIsLoading(true);
-          await handleRequest("POST","http://localhost:8080/prompt",options)    
-          // console.log("cleared session storage")
-          sessionStorage.removeItem(`project_tree_${projectId}`)
           
-          sessionStorage.removeItem(`project_URL_${projectId}`);
-          // console.log(sessionStorage.getItem(`project_tree_${projectId}`));
-          changeFileState!([]);
-          setLinkArrived!(false);
+                            // duplicate for testing
+                    // console.log("cleared session storage")
+                    sessionStorage.removeItem(`project_tree_${projectId}`)
+                    
+                    sessionStorage.removeItem(`project_URL_${projectId}`);
+                    // console.log(sessionStorage.getItem(`project_tree_${projectId}`));
+                    changeFileState?.([]);
+                    setLinkArrived?.(false);
+              const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
+              console.log("res on ai input",res)
+                if (!res.success){
+          toast(res.message)
+          setLoadingState?.(false);
+          return ; 
+                }
 
         }catch(err){
           if (err instanceof Error){

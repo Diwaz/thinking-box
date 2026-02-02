@@ -42,7 +42,17 @@ const DUMMY_PROJECTS: ShowcaseProject[] = [
     id: "3",
     title: "Portfolio Site",
     description: "Payment processing made easy",
-    userName: "Dev Team",
+    userName: "Hesoyam",
+    userImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=DevTeam",
+    thumbnail: "/tb-thumbnail.png",
+    viewedDate: "Viewed 31 Dec 2025",
+    projectUri: "https://example.com/simple-payments"
+  },
+  {
+    id: "4",
+    title: "Ecommerece Portal",
+    description: "Payment processing made easy",
+    userName: "Andrew Matheus",
     userImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=DevTeam",
     thumbnail: "/tb-thumbnail.png",
     viewedDate: "Viewed 31 Dec 2025",
@@ -60,7 +70,6 @@ export const ShowcaseProjects = () => {
       setLoading(true);
       setError(null);
       try {
-        // Uncomment when API is ready
         // const response = await handleRequest(
         //   "GET",
         //   `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase`
@@ -71,7 +80,6 @@ export const ShowcaseProjects = () => {
         // }
         // setProjects(response.projects || DUMMY_PROJECTS);
         
-        // For now, using dummy data
         setProjects(DUMMY_PROJECTS);
       } catch (err) {
         console.error("Failed to fetch showcase projects:", err);
@@ -88,20 +96,7 @@ export const ShowcaseProjects = () => {
     return name.charAt(0).toUpperCase();
   };
 
-  const getAvatarColor = (name: string): string => {
-    const colors = [
-      "bg-pink-500",
-      "bg-purple-500",
-      "bg-blue-500",
-      "bg-cyan-500",
-      "bg-green-500",
-      "bg-yellow-500",
-      "bg-red-500",
-      "bg-indigo-500",
-    ];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
+
 
   if (error) {
     return (
@@ -122,17 +117,17 @@ export const ShowcaseProjects = () => {
         </p>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3,4].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="animate-pulse">
-                <div className="bg-[#252525] rounded-xl h-48 mb-4"></div>
-                <div className="bg-[#252525] rounded h-4 w-3/4 mb-2"></div>
-                <div className="bg-[#252525] rounded h-3 w-1/2"></div>
+                <div className="bg-[#252525] rounded-xl h-40 mb-3"></div>
+                <div className="bg-[#252525] rounded h-3 w-3/4 mb-2"></div>
+                <div className="bg-[#252525] rounded h-2 w-1/2"></div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {projects.map((project) => (
               <a
                 key={project.id}
@@ -141,9 +136,9 @@ export const ShowcaseProjects = () => {
                 rel="noopener noreferrer"
                 className="group cursor-pointer"
               >
-                <Card className="bg-[#05171C] border-[#404040] hover:border-[#0070F3] overflow-hidden transition-all duration-300 h-full flex flex-col gap-1 p-0">
+                <Card className="bg-[#05171C] hover:border-[#404040] border-[#05171C] overflow-hidden transition-all duration-300 h-full flex flex-col gap-1 p-0">
                   {/* Thumbnail */}
-                  <div className="relative h-48 w-full overflow-hidden bg-[#252525]">
+                  <div className="relative h-40 w-full overflow-hidden bg-[#252525]">
                     <Image
                       src={project.thumbnail}
                       alt={project.title}
@@ -154,27 +149,24 @@ export const ShowcaseProjects = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 p-4 flex flex-col justify-between">
-                
-
-
+                  <div className="flex-1 p-3 flex flex-col justify-between">
                     {/* User Info */}
-                    <div className="flex items-center ">
+                    <div className="flex items-center gap-2">
                       {/* Avatar */}
                       <div
-                        className={`flex bg-[#05001E] items-center justify-center w-10 h-10 rounded-full flex-shrink-0`}
+                        className={`flex bg-[#05001E] items-center justify-center w-8 h-8 rounded-full flex-shrink-0`}
                       >
-                        <span className="text-white font-bold text-sm">
+                        <span className="text-white font-bold text-xs">
                           {getInitial(project.userName)}
                         </span>
                       </div>
 
                       {/* User Details */}
-                      <div className="flex-1 min-w-0  flex-col items-start">
-                        <p className="text-sm font-medium text-white truncate  flex justify-start px-2">
+                      <div className="flex-1 min-w-0 flex flex-col items-start">
+                        <p className="text-xs font-medium text-white truncate">
                           {project.title}
                         </p>
-                        <p className="text-xs text-gray-500 flex justify-start px-2">
+                        <p className="text-[10px] text-gray-500 truncate">
                           {project.userName}
                         </p>
                       </div>

@@ -51,7 +51,7 @@ const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
 const [projectTitle, setProjectTitle] = useState("New Project");
 const [createdFile,setCreatedFile]= useState<string[]>([]);
-const [IsGenerationloading,setIsGenerationLoading] = useState(true);
+const [IsGenerationloading,setIsGenerationLoading] = useState(false);
   const { data: session } = useSession();
   const userId = session?.user.id;
 
@@ -113,6 +113,9 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
           break;
         case "INVALID_INPUT":
           setIsGenerationLoading(false);
+             setThinking(false); 
+            setBuiding(false);
+            setDelivering(false);
           break;
       }
 
@@ -138,6 +141,8 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
             }
           ]); 
         console.log("hello no conv history")
+          setIsGenerationLoading(true);
+          setLinkArrived(false);
         const options = {
           body :{
             prompt: projectData.initialPrompt,
@@ -255,7 +260,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
     }
     fetchUpdate();
 
-  },[fileTree,id])
+  },[id])
 
   return (
 <div className=' bg-[#05171C]'>
@@ -279,7 +284,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
         <div className="chatSection flex bg-[#05171C] flex-[35%] items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
           <ChatWrapper messages={messages} createdFile={createdFile} /> 
           <div className='w-full '>
-            <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} setLinkArrived={setLinkArrived}/>
+            <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} setLinkArrived={setLinkArrived} setLoadingState={setIsGenerationLoading}/>
           </div>
         </div>
       </ResizablePanel>
@@ -308,7 +313,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
         <div className="chatSection bg-[#05171C] flex items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
           <ChatWrapper messages={messages} createdFile={createdFile} /> 
           <div className='w-full  flex-shrink-0'>
-            <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} />
+            <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} setLinkArrived={setLinkArrived} setLoadingState={setIsGenerationLoading} />
           </div>
         </div>
       </TabsContent>
