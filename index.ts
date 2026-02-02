@@ -350,8 +350,8 @@ app.get("/showcase/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
 
     const userData = validateSchema(authUserParser)(req.user);
     const userId = userData.id;
-    
-    const projectData = await prisma.showcase.findFirst({
+    let projectData;
+     projectData = await prisma.showcase.findFirst({
       where: {
         id,
       },
@@ -362,10 +362,27 @@ app.get("/showcase/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
       }
     })
     if (!projectData){
-      return res.status(409).json({
-        success:false,
-        message:"Unauthorized access"
-      })
+      try{
+
+         projectData = await prisma.project.findFirst({
+          where:{
+            id
+          } ,
+          select:{
+            id:true,
+            title:true,
+            userId: true
+          }
+        })
+
+      
+
+      }catch(err){
+        return res.status(409).json({
+          success:false,
+          message:"Unauthorized access"
+        })
+      }
     }
     const title = projectData?.title;
 

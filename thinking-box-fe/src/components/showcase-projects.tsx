@@ -5,6 +5,7 @@ import Image from 'next/image';
 import  handleRequest  from '@/utils/request';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export interface ShowcaseProject {
   id: string;
@@ -20,7 +21,6 @@ export interface RawShowcaseProject {
     name: string;
   };
 }
-
 
 export interface PublicProject {
   id:string,
@@ -116,11 +116,9 @@ export const ShowcaseProjects = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {showcaseProjects?.map((project) => (
-              <a
+              <Link
                 key={project.id}
-                href={ "#"}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/view/${project.id}`}
                 className="group cursor-pointer"
               >
                 <Card className="bg-[#05171C] hover:border-[#404040] border-[#05171C] overflow-hidden transition-all duration-300 h-full flex flex-col gap-1 p-0">
@@ -160,14 +158,12 @@ export const ShowcaseProjects = () => {
                     </div>
                   </div>
                 </Card>
-              </a>
+              </Link>
             ))}
             {projects?.map((project) => (
-              <a
+             <Link
                 key={project.id}
-                href={ "#"}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/view/${project.id}`}
                 className="group cursor-pointer"
               >
                 <Card className="bg-[#05171C] hover:border-[#404040] border-[#05171C] overflow-hidden transition-all duration-300 h-full flex flex-col gap-1 p-0">
@@ -207,7 +203,7 @@ export const ShowcaseProjects = () => {
                     </div>
                   </div>
                 </Card>
-              </a>
+              </Link>
             ))}
           </div>
         )}

@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/sidebar"
 import React from "react";
 import { ShowcaseProjects } from "@/components/showcase-projects";
+import { useSession } from "@/lib/auth-client";
 
 export default function Home() {
-
+const {data:session} = useSession();
+const userId = session?.user.id;
 
   return (
     <>
@@ -78,12 +80,12 @@ export default function Home() {
     </SidebarProvider>
 
         </div>
-              <section className="bg-[#05171C] w-full flex justify-center ">
+             {userId && <section className="bg-[#05171C] w-full flex justify-center ">
 
               <div className="bg-[#05001E] rounded-lg p-5  backdrop-blur-xl  w-[85%] relative top-[-100px] ">
               <ShowcaseProjects/> 
               </div>
-              </section>
+              </section>}
               </>
   )
 }
