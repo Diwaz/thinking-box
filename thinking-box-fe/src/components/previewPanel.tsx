@@ -27,7 +27,7 @@ export const PreviewWrapper = ({projectUri,isFileTreeLoading,fileTree,setSelecte
         <Tabs defaultValue="preview" className='h-full gap-0'>
 
                 <div className="navPreview  border-1 lg:border-b-1 lg:border-0  p-1 flex items-center gap-10 justify-between">
-         <TabsList className=''>
+         <TabsList className='bg-[#05001E] '>
           <TabsTrigger value="editor">
             <Code/>
           </TabsTrigger>

@@ -255,15 +255,15 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
   },[fileTree,id])
 
   return (
-<div className='px-1'>
-  <div className="navbar items-center flex gap-5 h-12 border-b-border border-b-1 bg-[#151315] p-5">
-    <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg cursor-pointer'>
+<div className=' bg-[#05171C]'>
+  <div className="navbar items-center flex gap-5 h-12 border-b-border border-b-1 bg-[#05171C] p-5">
+    <div className='bg-[#05001E] text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg cursor-pointer'>
       <Link href={'/'}>
         <Codesandbox className='w-4 h-4'/>
       </Link>
     </div>
-    <Separator orientation='vertical' /> 
-    <div className='bg-sidebar-primary text-sm h-8 rounded-sm px-5 flex items-center gap-3'>
+    <Separator orientation='vertical'  /> 
+    <div  title={`${projectTitle}`} className='bg-[#05001E]  text-xs sm:text-sm h-8 rounded-sm px-5 flex items-center gap-3'>
       <Command width={15} className=''/>
       {projectTitle}
     </div> 
@@ -273,16 +273,16 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
   <div className="chatWrapper hidden lg:flex h-[calc(100vh-60px)] gap-2">
     <ResizablePanelGroup direction="horizontal">
       <ResizablePanel defaultSize={35} minSize={25} className='flex flex-col justify-end w-full'>
-        <div className="chatSection flex flex-[35%] items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
+        <div className="chatSection flex bg-[#05171C] flex-[35%] items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
           <ChatWrapper messages={messages} createdFile={createdFile} /> 
-          <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)]'>
+          <div className='w-full '>
             <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} />
           </div>
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle className='hover:bg-[#64E6FB]'/>
       <ResizablePanel defaultSize={65} minSize={30}>
-        <div className="previewSection flex-[65%] border-r-1 border-[#2d2d2d] h-full flex-col">
+        <div className="previewSection flex-[65%] bg-[#05171C] border-r-1 border-[#2d2d2d] h-full flex-col">
           <PreviewWrapper projectUri={projectUri} isFileTreeLoading={isFileTreeLoading} fileTree={fileTree} setSelectedFile={setSelectedFile} selectedFile={selectedFile} linkArrived={linkArrived} thinking={thinking} building={building} />
         </div>
       </ResizablePanel>
@@ -291,9 +291,9 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
 
   {/* Mobile/Tablet View - Tabs */}
   <div className="lg:hidden h-[calc(100vh-60px)] mt-1">
-    <Tabs defaultValue="chat" className="h-full flex flex-col w-full">
-      <TabsList className="w-full grid grid-cols-2 rounded-sm p-0 m-0 border-input border-b-1 bg-[#1F1F1F] h-10 flex-shrink-0">
-        <TabsTrigger value="chat" className="rounded-none   data-[state=active]:rounded-sm ">
+    <Tabs defaultValue="chat" className="h-full flex flex-col w-full ">
+      <TabsList className="w-full grid grid-cols-2 rounded-sm p-0 m-0 border-input border-b-1 bg-[#05171C] h-10 flex-shrink-0">
+        <TabsTrigger value="chat" className="rounded-none   data-[state=active]:rounded-sm data-[state=active]:bg-[#05001E] ">
           Chat
         </TabsTrigger>
         <TabsTrigger value="preview" className="rounded-none  data-[state=active]:rounded-sm">
@@ -301,16 +301,16 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(true);
         </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="chat" className="flex-1 m-0 p-0 h-full overflow-hidden">
-        <div className="chatSection flex items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
+      <TabsContent value="chat" className="flex-1  m-0 p-0 h-full overflow-hidden">
+        <div className="chatSection bg-[#05171C] flex items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
           <ChatWrapper messages={messages} createdFile={createdFile} /> 
-          <div className='w-full shadow-[0_-4px_6px_3px_rgba(0,0,0,0.4)] flex-shrink-0'>
+          <div className='w-full  flex-shrink-0'>
             <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} />
           </div>
         </div>
       </TabsContent>
       
-      <TabsContent value="preview" className="flex-1 m-0 p-0 h-full overflow-hidden">
+      <TabsContent value="preview" className="flex-1 bg-[#05171C] m-0 p-0 h-full overflow-hidden">
         <div className="previewSection border-r-1 border-[#2d2d2d] h-full flex-col overflow-hidden">
           <PreviewWrapper projectUri={projectUri} isFileTreeLoading={isFileTreeLoading} fileTree={fileTree} setSelectedFile={setSelectedFile} selectedFile={selectedFile} linkArrived={linkArrived} thinking={thinking} building={building} />
         </div>

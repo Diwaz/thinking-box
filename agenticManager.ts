@@ -18,7 +18,7 @@ import { PrismaClient } from "./generated/prisma";
 import { ConversationType } from "./generated/prisma";
 import { MessageFrom } from "./generated/prisma";
 import { appendFile } from "fs/promises";
-
+import { ChatAnthropic } from "@langchain/anthropic";
 
 const prisma = new PrismaClient();
 
@@ -63,9 +63,12 @@ const llm = new ChatGoogleGenerativeAI({
 const openAi = new ChatOpenAI({
   model:'gpt-5.2',
 })
-// const anthopic = new ChatAnthropic({
-//   model:'gpt-5.1-codex',
-// })
+
+
+const anthropic = new ChatAnthropic({
+  model:"claude-sonnet-4-5-20250929",
+  temperature:0,
+})
 
 
 const createfile = tool(
@@ -73,8 +76,19 @@ const createfile = tool(
     // const file = Bun.file(filePath);
     const result = createFileSchema.safeParse({filePath,content});
     if (!result.success){
-      return `Unable to create file error : ${result.error}`
+
+    return JSON.stringify({
+      success:false,
+        error: `Tool call validation failed. Missing or invalid parameters: ${result.error}. You MUST provide both 'filePath' and 'content' parameters. The 'content' parameter cannot be empty and must contain the actual file content.`,
+        requiredParameters:{
+          filePath:"string - a file path",
+          content: "string (min 1 char) - the complete file content"
+        }
+    })
     }
+
+
+    console.log("successfully parsed the tool call input")
 
     try {
     let fullPath:string;
@@ -153,7 +167,7 @@ const toolsByName = {
 const tools = Object.values(toolsByName);
 const llmWithTools = llm.bindTools(tools);
 const OpenAiWithTools = openAi.bindTools(tools);
-
+const AnthropicWithTools = anthropic.bindTools(tools);
 
 async function llmCall(state: State) {
     send({
@@ -191,7 +205,8 @@ if (await contextFile.exists()){
   }
 
   messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
-  const llmResponse = await llmWithTools.invoke(messageWrapper)
+  // const llmResponse = await llmWithTools.invoke(messageWrapper)
+  const llmResponse = await AnthropicWithTools.invoke(messageWrapper)
   // const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
   // if (llmResponse.tool_calls?.length == 0){
   //   const messageSegment = llmResponse.content;
@@ -235,8 +250,40 @@ async function toolNode(state: State) {
   const newGeneratedFiles = [...state.generatedFiles];
   for (const toolCall of lastMessage.tool_calls ?? []) {
       const tool = toolsByName[toolCall.name];
-      if (!tool) continue;
-      const observation = await tool.invoke(toolCall);
+      if (!tool) {
+        result.push(
+          new ToolMessage({
+            tool_call_id: toolCall.id,
+            content: JSON.stringify({
+              success: false,
+              error:"Tool Not Found"
+            })
+          })
+        )
+        continue;
+      }
+      let observation;
+      try {
+
+        observation = await tool.invoke(toolCall);
+        try {
+          const obsResult = JSON.parse(observation["content"]);
+          if (!obsResult.success && obsResult.error){
+            console.log("Tool call failed validation",obsResult.error);
+          }
+        }catch(e){
+          // Not JSON
+          console.log("JSON parsing error retrying");
+        }
+      }catch(e){
+        console.log("failed while invoking the toolcall",e);
+        observation = {
+          content: JSON.stringify({
+            success:false,
+            error: `Tool invocation error: ${e instanceof Error ? e.message : "Unknown error"}`
+          })
+        }
+      }
       // console.log("tool msg",observation["content"])
 
       if (toolCall.name === "create_new_file"){

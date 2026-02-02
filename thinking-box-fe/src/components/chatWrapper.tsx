@@ -50,7 +50,7 @@ export const ChatWrapper = ({messages,createdFile}:InputProps) => {
       />
       <AvatarFallback>TB</AvatarFallback>
     </Avatar>
-            <div className='bg-[#1F1F1F]  flex justify-end p-4 rounded-lg'>
+            <div className='bg-[#05001E]  flex justify-end p-4 rounded-lg rounded-tr-none'>
 
           {item.content}
             </div>

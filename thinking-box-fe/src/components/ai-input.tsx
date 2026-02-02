@@ -1,6 +1,6 @@
 "use client"
 
-import {  useState } from "react"
+import {  useEffect, useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import {  ArrowRight } from "lucide-react"
@@ -10,6 +10,7 @@ import { FileNode } from "./fileTree"
 import { From, MessagePacket } from "@/app/project/[id]/page"
 import { toast } from "sonner"
 import { Spinner } from "./ui/spinner"
+import { signIn, useSession } from "@/lib/auth-client"
 
 
 type InputProps = {
@@ -20,7 +21,6 @@ type InputProps = {
   setMessages?: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
   loadingState?: boolean,
   // onSuggestionSelected?: (prompt: string) => void,
-  suggestedValue?: string,
 }
 
 
@@ -30,15 +30,31 @@ export function AIInput({
   changeFileState,
   setMessages,
   loadingState,
-  // onSuggestionSelected,
-  suggestedValue,
 }: InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
   const [Isloading,setIsLoading] = useState(false);
+  const {data:session} = useSession()
+  const userId = session?.user.id;
 
+useEffect(()=>{
+  // const {data:session} = useSession()
+},[])
 
-
+  const handleLogin = async ()=>{
+await signIn.social({
+									provider: "google",
+									callbackURL: "http://localhost:3000",
+									fetchOptions: {
+										onRequest: () => {
+											setIsLoading(true);
+										},
+										onResponse: () => {
+											setIsLoading(false);
+										},
+									},
+								});
+  }
   const handleSubmit = async(type:string) =>{
     if (type === "initial"){
                  const projectId = crypto.randomUUID();
@@ -114,12 +130,12 @@ export function AIInput({
   return (
     <div className="w-full p-2">
       <div
-        className="mx-auto w-full  max-w-3xl rounded-lg  border border-border/50 bg-card/70 p-2  shadow-[inset_0_1px_0_oklch(1_0_0_/_0.05)] backdrop-blur-xl ring-1 ring-ring/10 "
+        className="mx-auto w-full  max-w-xl rounded-lg  border border-border/50 bg-card/70 p-2   backdrop-blur-xl "
         role="group"
         aria-label="AI prompt composer"
       >
         <Textarea
-          value={value || suggestedValue}
+          value={value}
           onChange={(e) => setValue(e.target.value)}
           onInput={e => {
             const target = e.currentTarget;
@@ -139,7 +155,7 @@ export function AIInput({
            
             <Button
               type="button"
-              className="h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              className="h-9 w-9 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer"
               aria-label="Send"
               disabled={value.length < 1 || loadingState}
               onClick={() => {
@@ -163,17 +179,18 @@ export function AIInput({
 
 
           <div className="flex items-center gap-2">
-         
-            <Button
+            {userId ? (<Button
               type="button"
-              className="h-9 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer "
+              className="h-9 p-2 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer "
               disabled={value.length < 1 || Isloading}
               aria-label="Send"
               onClick={() => {
                 handleSubmit(type);
                  }}
             >
+              <div>
               Generate
+              </div>
                  {Isloading ? (
                   <Spinner/>
                  )
@@ -183,7 +200,29 @@ export function AIInput({
                 )
                 }
 
-            </Button>
+            </Button>):(<Button
+              type="button"
+              className="h-9 p-2 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer "
+              // disabled={}
+              aria-label="Send"
+              onClick={() => {
+                handleLogin();
+                 }}
+            >
+              <div>
+              Login
+              </div>
+                 {Isloading ? (
+                  <Spinner/>
+                 )
+                : (
+
+                  <ArrowRight className="h-4 w-4" />
+                )
+                }
+
+            </Button>)}
+            
           </div>
         </div>
           )}

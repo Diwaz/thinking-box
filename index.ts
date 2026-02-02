@@ -44,7 +44,7 @@ const sandboxLimiter = rateLimit({
     },
   }),
   windowMs: 5 * 60 * 1000, // 30 minute
-  max: 5, // 10  attempts per  minute
+  max:  Number(process.env.SANDBOX_RATE_LIMIT!), // 10  attempts per  minute
   standardHeaders: true,
   legacyHeaders: false,
   message: { 
@@ -69,7 +69,7 @@ const strictLimiter = rateLimit({
     },
   }),
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 3, // 2  attempts per  minute
+  max: Number(process.env.LLM_RATE_LIMIT!), // 2  attempts per  minute
   standardHeaders: true,
   legacyHeaders: false,
   message: { 
@@ -222,7 +222,8 @@ app.post('/project',requireAuth,async(req,res)=>{
         userId
       }
     })
-    if (checkLimit.length > 10){
+    console.log("check limit log",checkLimit,"checkLim len",checkLimit.length)
+    if (checkLimit.length > 20){
       return res.status(409).json({
         success: false,
         message: "Project Limit Exceed!"

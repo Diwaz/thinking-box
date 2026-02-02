@@ -292,7 +292,7 @@ function SidebarTriggerCustom({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-10 w-full p-2 flex sm:hidden", className)}
+      className={cn("size-10  p-2 flex sm:hidden", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -300,14 +300,13 @@ function SidebarTriggerCustom({
       {...props}
     >
       
-  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-            <Codesandbox className="size-4" />
-      {/* <PanelLeftIcon /> */}
+  <div className=" text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+            {/* <Codesandbox className="size-4" /> */}
+      <PanelLeftIcon className="size-4" />
           </div>
-<div className="grid flex-1 text-left text-sm leading-tight">
+{/* <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-medium">{"Thinking-box"}</span>
-            {/* <span className="truncate text-xs">{"Think Build Ship"}</span> */}
-          </div>
+          </div> */}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
