@@ -292,7 +292,7 @@ function SidebarTriggerCustom({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-10  p-2 flex sm:hidden", className)}
+      className={cn("size-10  p-2 flex lg:hidden", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()

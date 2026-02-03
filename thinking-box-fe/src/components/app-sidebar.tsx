@@ -205,7 +205,10 @@ if (hasSession){
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
+        {
+          hasSession && 
         <NavProjects projects={projects} />
+        }
       </SidebarContent>
       <SidebarFooter>
         {

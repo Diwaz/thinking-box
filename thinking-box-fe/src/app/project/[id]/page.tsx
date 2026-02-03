@@ -227,13 +227,13 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
   // RENDER-CONDITION:when user goes for new prompt on existing project or project-Id changes
   useEffect(()=>{
     const fetchUpdate =async ()=>{
-    //  console.log("check state here",fileTree) 
-    console.log("one last time")
-    const treeData = sessionStorage.getItem(`project_tree_${id}`)
+    // //  console.log("check state here",fileTree) 
+    // console.log("one last time")
+    // const treeData = sessionStorage.getItem(`project_tree_${id}`)
 
-    // const hostedURL = sessionStorage.getItem(`project_URL_${id}`);
-    // console.log("fetching here",treeData)
-    if (!treeData){
+    // // const hostedURL = sessionStorage.getItem(`project_URL_${id}`);
+    // // console.log("fetching here",treeData)
+    // if (!treeData){
       console.log("we go fetching again")
       setLinkArrived(false);
        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
@@ -255,7 +255,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
 
       // console.log("existing data",existingData)
       // setResponse(existingData.uri)
-    }
+    // }
 
     }
     fetchUpdate();
@@ -281,7 +281,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
   <div className="chatWrapper hidden lg:flex h-[calc(100vh-60px)] gap-2">
     <ResizablePanelGroup direction="horizontal">
       <ResizablePanel defaultSize={35} minSize={25} className='flex flex-col justify-end w-full'>
-        <div className="chatSection flex bg-[#05171C] flex-[35%] items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
+        <div className="chatSection flex bg-[#05171C] flex-[35%] items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full scrollbar">
           <ChatWrapper messages={messages} createdFile={createdFile} /> 
           <div className='w-full '>
             <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} setLinkArrived={setLinkArrived} setLoadingState={setIsGenerationLoading}/>
@@ -310,7 +310,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
       </TabsList>
       
       <TabsContent value="chat" className="flex-1  m-0 p-0 h-full overflow-hidden">
-        <div className="chatSection bg-[#05171C] flex items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full">
+        <div className="chatSection bg-[#05171C] flex items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full scrollbar">
           <ChatWrapper messages={messages} createdFile={createdFile} /> 
           <div className='w-full  flex-shrink-0'>
             <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} setLinkArrived={setLinkArrived} setLoadingState={setIsGenerationLoading} />
@@ -319,7 +319,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
       </TabsContent>
       
       <TabsContent value="preview" className="flex-1 bg-[#05171C] m-0 p-0 h-full overflow-hidden">
-        <div className="previewSection border-r-1 border-[#2d2d2d] h-full flex-col overflow-hidden">
+        <div className="previewSection border-r-1 border-[#2d2d2d] h-full flex-col overflow-hidden scrollbar">
           <PreviewWrapper projectUri={projectUri} isFileTreeLoading={isFileTreeLoading} fileTree={fileTree} setSelectedFile={setSelectedFile} selectedFile={selectedFile} linkArrived={linkArrived} thinking={thinking} building={building} />
         </div>
       </TabsContent>

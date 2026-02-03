@@ -11,6 +11,7 @@ import fs from "fs";
 import path from "path";
 import Sandbox from "e2b";
 import type { Readable } from "stream";
+import { randomUUIDv7 } from "bun";
 
 // export const makePrefix = (projectId:string)=>{
 //     return `projects/${projectId}/TB/`
@@ -142,32 +143,47 @@ export const loadProjectFromBucket= async(
 
     console.log(`Downloaded ${tarBuffer.length} bytes `);
 
-    const tempDir = `/tmp/untar_${projectId}`;
+    const reqId = randomUUIDv7();
+    const tempDir = `/tmp/untar_${projectId}_${reqId}`;
     const tarPath = `${tempDir}/project.tar.gz`;
 
     await sandbox.commands.run(`mkdir -p ${tempDir}`);
-
-
     // Converting Buffer to ArrayBuffer
     const arrayBuffer = new Uint8Array(tarBuffer).buffer;
     await sandbox.files.write(tarPath, arrayBuffer);
 
     // Extract
-    await sandbox.commands.run(`mkdir -p /home/user`);
-    const extractResult = await sandbox.commands.run(
-      `cd /home/user && tar -xzf ${tarPath} 2>&1`,
-      {
+const extractResult =    await sandbox.commands.run(`
+      flock /home/user/.extract.lock -c ' 
+      set -e 
+      cd /home/user
+      tar -xzf ${tarPath} '
+      `, {
         onStdout: (data) => console.log("UNTAR:", data),
         onStderr: (data) => console.error("UNTAR stderr:", data)
-      }
-    );
-
+      })
     if (extractResult.exitCode !== 0) {
       console.error(`Extraction failed with exit code ${extractResult.exitCode}`);
       return false;
     }
 
-    console.log(`Project extracted to /home/user`);
+    console.log("Every thing going smoothly unzippid tar file")
+
+    // await sandbox.commands.run(`mkdir -p /home/user`);
+    // const extractResult = await sandbox.commands.run(
+    //   `cd /home/user && tar -xzf ${tarPath} 2>&1`,
+    //   {
+    //     onStdout: (data) => console.log("UNTAR:", data),
+    //     onStderr: (data) => console.error("UNTAR stderr:", data)
+    //   }
+    // );
+
+    // if (extractResult.exitCode !== 0) {
+    //   console.error(`Extraction failed with exit code ${extractResult.exitCode}`);
+    //   return false;
+    // }
+
+    // console.log(`Project extracted to /home/user`);
 
     await sandbox.commands.run(`rm -rf ${tempDir}`);
 

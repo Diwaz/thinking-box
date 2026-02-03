@@ -125,13 +125,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
   // RENDER-CONDITION:when user goes for new prompt on existing project or project-Id changes
   useEffect(()=>{
     const fetchUpdate =async ()=>{
-    //  console.log("check state here",fileTree) 
-    console.log("one last time")
-    const treeData = sessionStorage.getItem(`project_tree_${id}`)
-
-    // const hostedURL = sessionStorage.getItem(`project_URL_${id}`);
-    // console.log("fetching here",treeData)
-    if (!treeData){
+  
       console.log("we go fetching again")
       setLinkArrived(false);
        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase/history/${id}`)
@@ -154,12 +148,11 @@ const [projectTitle, setProjectTitle] = useState("New Project");
 
       // console.log("existing data",existingData)
       // setResponse(existingData.uri)
-    }
 
     }
     fetchUpdate();
 
-  },[fileTree,id])
+  },[id])
 
   return (
     <div className='bg-[#05171C]'>

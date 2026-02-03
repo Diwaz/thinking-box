@@ -112,22 +112,20 @@ await signIn.social({
           setLoadingState?.(true);
           setIsLoading(true);
           
-                            // duplicate for testing
-                    // console.log("cleared session storage")
-                    sessionStorage.removeItem(`project_tree_${projectId}`)
-                    
-                    sessionStorage.removeItem(`project_URL_${projectId}`);
-                    // console.log(sessionStorage.getItem(`project_tree_${projectId}`));
-                    changeFileState?.([]);
-                    setLinkArrived?.(false);
+
               const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
               console.log("res on ai input",res)
                 if (!res.success){
           toast(res.message)
           setLoadingState?.(false);
+          setLinkArrived?.(true);
           return ; 
                 }
-
+                    sessionStorage.removeItem(`project_tree_${projectId}`)
+                    
+                    sessionStorage.removeItem(`project_URL_${projectId}`);
+                    changeFileState?.([]);
+                    setLinkArrived?.(false);
         }catch(err){
           if (err instanceof Error){
             toast.error(err.message);
@@ -164,8 +162,8 @@ await signIn.social({
             target.style.height = "auto";
             target.style.height = Math.min(target.scrollHeight, 240) + "px"; // 240px = max-height
           }}
-          placeholder="Explain your thought"
-          className="min-h-20 resize-none border-0  px-2 text-xs leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-base"
+          placeholder={`${type==="initial" ? "Explain your thought (e.g: create a landing page for t-shirt shop)": "Expand your idea"}`}
+          className="min-h-20 resize-none border-0  px-2 text-xs leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-base scrollbar"
           aria-label="Prompt"
           style={{ maxHeight: "240px", overflowY: "auto" }}
         />

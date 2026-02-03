@@ -18,7 +18,7 @@ const {data:session} = useSession();
 const userId = session?.user.id;
 
   return (
-    <>
+    <div className="scrollbar">
 <div className="h-screen overflow-hidden">
    <DitherShader
           src="https://images.unsplash.com/photo-1614728263952-84ea256f9679?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
@@ -31,7 +31,7 @@ const userId = session?.user.id;
           primaryColor="#000000"
           secondaryColor="#f5f5f5"
           threshold={0.5}
-          className="h-full w-[600px] sm:h-screen sm:w-full"
+          className="h-full w-[700px] sm:h-screen sm:w-full"
           >
 
 
@@ -40,7 +40,7 @@ const userId = session?.user.id;
     <SidebarProvider defaultOpen={true}>
       <AppSidebar  />
       <section className="absolute  top-0 h-full  w-full   mx-auto flex  flex-col  justify-center items-center  text-center md:pt-44">
-        <div className=" absolute flex items-center  justify-between  w-full top-0 left-0  sm:hidden">
+        <div className=" absolute flex items-center  justify-between  w-full top-0 left-0  lg:hidden">
 
     <SidebarTriggerCustom />
     <div className="flex items-center gap-2 flex-row-reverse px-1">
@@ -86,7 +86,7 @@ const userId = session?.user.id;
               <ShowcaseProjects/> 
               </div>
               </section>}
-              </>
+              </div>
   )
 }
 

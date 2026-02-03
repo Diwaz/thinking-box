@@ -125,6 +125,28 @@
   animation: l5 1.5s infinite cubic-bezier(0.3,1,0,1);
 }
 
+/* for firefox */
+.scrollbar {
+  /* scrollbar-width:10px; */
+  scrollbar-width: thin;
+  scrollbar-color: #05001E transparent;
+  
+}
+
+
+/* for chromium */
+.scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollbar::-webkit-scrollbar-track { 
+  background: red;
+}
+
+.scrollbar::-webkit-scrollbar-thumb { 
+  background:red;
+}
+
 @keyframes l5 {
    0%   {background-position: 0    0,100% 0   ,100% 100%,0 100%}
    33%  {background-position: 0    0,100% 0   ,100% 100%,0 100%;width:30px;height: 30px}
