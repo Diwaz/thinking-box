@@ -119,20 +119,8 @@ type State = z.infer<typeof MessageState>;
 type ProjectStore = Map<string,State>
 
 
-// const globalStore:GlobalStore = {}
   const globalStore = new Map<string,ProjectStore>();
 
-
-// {
-//   "user1": {
-//     "project1":{
-//       messages:[]
-//     },
-//     "project2":{
-//       messages:[]
-//     }
-//   }
-// }
 
 export const getFiles = async (sdx:Sandbox)=>{
 
@@ -197,7 +185,6 @@ app.get('/project/list',requireAuth,async(req,res)=>{
     }
   })
   
-  // console.log("response",response); 
   return res.status(200).json({
     success: true,
     projects: response 
@@ -222,8 +209,7 @@ app.post('/project',requireAuth,async(req,res)=>{
         userId
       }
     })
-    console.log("check limit log",checkLimit,"checkLim len",checkLimit.length)
-    if (checkLimit.length > 20){
+    if (checkLimit.length > Number(process.env.USER_PER_PROJECT_LIMIT ?? 1)){
       return res.status(409).json({
         success: false,
         message: "Project Limit Exceed!"
@@ -236,7 +222,7 @@ app.post('/project',requireAuth,async(req,res)=>{
         userId, 
       }
     })
-    console.log("/project response",response)
+    // console.log("/project response",response)
 
   return res.status(200).json({
     "msg":response
@@ -399,7 +385,7 @@ app.get("/showcase/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     const files = await getFiles(sdx);
 
         const host = sdx.getHost(5173);
-        console.log("sent response to server")
+        // console.log("sent response to server")
    return res.status(200).json({
       success: true,
       // conversation: projectData,
@@ -409,7 +395,7 @@ app.get("/showcase/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     });
 
   }catch(err){
-    console.log("err",err)
+    // console.log("err",err)
     res.status(404).json({
       success: false,
       Error:err
@@ -466,7 +452,7 @@ app.get("/project/history/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     const files = await getFiles(sdx);
 
         const host = sdx.getHost(5173);
-        console.log("sent response to server")
+        // console.log("sent response to server")
    return res.status(200).json({
       success: true,
       // conversation: projectData,
@@ -591,14 +577,14 @@ app.post("/prompt",requireAuth,strictLimiter,async (req,res)=>{
       })  
     }
     const conversationState:State = projectState?.get(projectId)!; 
-      console.log("project state",conversationState)
+      // console.log("project state",conversationState)
     const sandboxId = await getSandboxId(userId,projectId);
      if (!sandboxId){
       return res.status(404).json({
         error: "Unable to create Sandbox at the moment"
       })
     }
-    console.log("state of active Sandboxes",activeSanbox); 
+    // console.log("state of active Sandboxes",activeSanbox); 
 
     // activeSanbox.set(projectId,payload)
   
@@ -712,15 +698,15 @@ const getSandboxId = async (userId: string,projectId:string): Promise<string | u
 wss.on("connection", (ws, req:Request) => {
   const params = new URLSearchParams(req.url.replace("/?", ""));
   const userId = params.get("userId");
-  console.log("New WebSocket:", userId);
-  console.log("client list active id",clients.keys())
+  // console.log("New WebSocket:", userId);
+  // console.log("client list active id",clients.keys())
 
   if (userId) clients.set(userId, ws);
   const mapIter = clients.keys();
-  console.log("iterate",mapIter.next().value)
+  // console.log("iterate",mapIter.next().value)
   ws.on("close", () => {
     clients.delete(userId);
-    console.log("client disconnected")
+    // console.log("client disconnected")
   });
 });
 

@@ -88,7 +88,7 @@ const createfile = tool(
     }
 
 
-    console.log("successfully parsed the tool call input")
+    // console.log("successfully parsed the tool call input")
 
     try {
     let fullPath:string;
@@ -103,7 +103,7 @@ const createfile = tool(
     await sdx.commands.run(`mkdir -p ${dir}`);
 
       await sdx.files.write(filePath,content);
-        console.log("sending this file ",fullPath)
+        // console.log("sending this file ",fullPath)
        send({
       action: "FILE_CREATION_UPDATE",
       message:`${fullPath}`
@@ -138,15 +138,15 @@ const runShellCommands = tool (
         secureCommand(command);
       const output = await sdx.commands.run(command,{
         onStdout: (data)=> {
-          console.log("command success output:",data)
+          // console.log("command success output:",data)
           // return `output from command: ${data}`
         },
         onStderr:(data)=>{ 
-          console.log("command failed output:",data)
+          // console.log("command failed output:",data)
           // return `output from command: ${data}`
         },
       });
-      console.log("cmd:",output);
+      // console.log("cmd:",output);
       return ` ran this command : ${command} got this :${output.stderr ? output.stderr : output.stdout}`
     }catch(err){
       return `Command failed error: ${err}`
@@ -176,8 +176,8 @@ async function llmCall(state: State) {
     })
   const messageWrapper: BaseMessage[] =[];
   // if (state.llmCalls == 0){
-    console.log(`${state.llmCalls}th LLM CALLLLLLLL`)
-    console.log("messages till now",state.messages)
+    // console.log(`${state.llmCalls}th LLM CALLLLLLLL`)
+    // console.log("messages till now",state.messages)
     try {
       
     //   send({
@@ -188,7 +188,6 @@ async function llmCall(state: State) {
 const contextFile =  Bun.file(`./Context/${projectId}.md`)
 if (await contextFile.exists()){
   
-  console.log("retrieved context")
   dynamicPrompt = `
   ## CONTEXT FROM PREVIOUS CONVERSATION:
      ${await contextFile.text()}
@@ -206,8 +205,8 @@ if (await contextFile.exists()){
 
   messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
 
-  const llmResponse = await llmWithTools.invoke(messageWrapper)
-  // const llmResponse = await AnthropicWithTools.invoke(messageWrapper)
+  // const llmResponse = await llmWithTools.invoke(messageWrapper)
+  const llmResponse = await AnthropicWithTools.invoke(messageWrapper)
   // const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
   // if (llmResponse.tool_calls?.length == 0){
   //   const messageSegment = llmResponse.content;
@@ -220,7 +219,7 @@ if (await contextFile.exists()){
   // } 
   const newCallCount = (state.llmCalls ?? 0) + 1
   conversationState.llmCalls = newCallCount;
-  console.log(`result of ${state.llmCalls}`,llmResponse)
+  // console.log(`result of ${state.llmCalls}`,llmResponse)
   // state.messages.push(llmResponse.content)
   
   return {
@@ -486,7 +485,7 @@ ${errors.some(e => e.includes('Preview shows error')) ? `
     }
 
     // Validation passed state
-  console.log("Validation successful!");
+  // console.log("Validation successful!");
   send({
     action: "LLM_UPDATE",
     message: "File validated successfully"
@@ -602,16 +601,14 @@ async function inputValidation(state:State){
       }
     }else{
       const userMessage = state.messages.filter(msg => msg._getType() === "human");
-      console.log("user messages",userMessage)
+      // console.log("user messages",userMessage)
       const llmInputValidation = await llm.invoke([
       new SystemMessage(INPUT_VALIDATION_PROMPT),
       ...userMessage
     ])
 
     if (typeof llmInputValidation["content"] === "string"){
-      console.log("llm response of validating prommpt",llmInputValidation["content"]);
       const isInvalid = containsInputValidationError(llmInputValidation["content"]);
-      console.log("is valid result",isInvalid);
       if (!isInvalid){
       const title = llmInputValidation["content"];
             send({
@@ -679,9 +676,7 @@ async function shouldStartBuilding(state:State){
 const getNonEmptyAiMsg = (state:State) : string | boolean =>{
       let fullLastMsg:string='';
       const lastMessage = state.messages.at(-1);
-      console.log("LETZ SEE tHE FINAL MSG",lastMessage)
       if (isAIMessage(lastMessage)){
-        console.log("yes ai")
         if (Array.isArray(lastMessage.content)){
         fullLastMsg =lastMessage.content.map((part)=>{
             return part.text
@@ -689,7 +684,6 @@ const getNonEmptyAiMsg = (state:State) : string | boolean =>{
         }else{
           fullLastMsg = lastMessage.content
         }
-        console.log("last msg",fullLastMsg)
         return fullLastMsg
       }
      return false; 
@@ -703,13 +697,11 @@ try {
 let llmFinalResponse;
   const finalMessage = getNonEmptyAiMsg(state);
   
-  console.log("reached final node");
   if (finalMessage){
     llmFinalResponse = {
       content: finalMessage
     }
   }else{
-    console.log("message not found need to generate")
     const conversationMessages = state.messages.filter(
       msg => msg._getType() === 'human' || msg._getType() === 'ai'
     );
@@ -719,13 +711,11 @@ let llmFinalResponse;
       ...conversationMessages
     ])
   }
-  console.log("generated finalNode Msg",llmFinalResponse)
 
   // const lastMessage = state.messages.at(-1);
   // const llmFinalResponse = {
   //   content: lastMessage!["content"] ?? "Final Resp"
   // }
-  console.log("final Message which should be appear",llmFinalResponse) 
   return {
     messages: [...state.messages,new AIMessage(llmFinalResponse["content"])]
   }
@@ -760,12 +750,7 @@ async function shouldContinue(state: State) {
   if (!state.hasValidated){
     return "validationNode"
   }
-  // if (!getNonEmptyAiMsg(state)){
-  //   return "finalNode" 
-  // }
-  // if (!state.hasSummazied){
-  //   return "summarizer";
-  // }
+
   return END;
 }
 
@@ -796,7 +781,6 @@ const agent = new StateGraph(MessageState)
             }))
         }
     };
-    console.log("agent started")
     // send({
     //   action: "LLM_UPDATE",
     //   message:"Agent started"
@@ -808,7 +792,6 @@ const agent = new StateGraph(MessageState)
     // console.log("last AI MSG",result.messages.at(-1).content);
     // const lastMessage = result.messages.at(-1).content;
     const lastMessage = getNonEmptyAiMsg(result);
-    console.log("result extracted from final node",lastMessage)
     if (conversationState.hasValidPrompt){
       const isBackup = await backupDataToBucket(sdx,userId,projectId); 
 
