@@ -74,10 +74,12 @@ await signIn.social({
                   setIsLoading(true);
                   setLoadingState?.(true);
                    const hasProject =await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`,options)
-                   console.log("result of creation projec",hasProject)
-                   if (hasProject.error){
-          toast(hasProject.error)
-                 return ;
+                   if (!hasProject.success){
+          toast(hasProject.message)
+          setIsLoading(false);
+          setLoadingState?.(false);
+          return ;
+          // throw new Error(hasProject.error);
                   }
                   setIsLoading(false);
                   console.log("uuid",projectId)

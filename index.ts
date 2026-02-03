@@ -43,13 +43,13 @@ const sandboxLimiter = rateLimit({
       return redisClient.sendCommand(args);
     },
   }),
-  windowMs: 5 * 60 * 1000, // 30 minute
-  max:  Number(process.env.SANDBOX_RATE_LIMIT!), // 10  attempts per  minute
+  windowMs: 30 * 60 * 1000, // 30 minute
+  max:  5, // 5  attempts per  minute
   standardHeaders: true,
   legacyHeaders: false,
   message: { 
     action:"rate-limit",
-    error: "Too many attempts from this IP. Please try again later." 
+    error: "Too many attempts from this IP. Please try again after 30 mins." 
   },
   // Custom key generator (optional)
   keyGenerator: (req) => {
@@ -68,8 +68,8 @@ const strictLimiter = rateLimit({
       return redisClient.sendCommand(args);
     },
   }),
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: Number(process.env.LLM_RATE_LIMIT!), // 2  attempts per  minute
+  windowMs: 60 * 60 * 1000, // 60 minute
+  max: 5, // 5  attempts per  minute
   standardHeaders: true,
   legacyHeaders: false,
   message: { 
@@ -94,7 +94,7 @@ app.use(cors({
 
 
 
-const SANDBOX_TIMEOUT = 20 * 60 * 1000;
+const SANDBOX_TIMEOUT = 30 * 60 * 1000;
 
 const prisma = new PrismaClient();
 
@@ -198,6 +198,7 @@ app.get('/project/list',requireAuth,async(req,res)=>{
 }
 
 })
+
 app.post('/project',requireAuth,async(req,res)=>{
   try{
     const userData = validateSchema(authUserParser)(req.user);
@@ -209,7 +210,15 @@ app.post('/project',requireAuth,async(req,res)=>{
         userId
       }
     })
-    if (checkLimit.length > Number(process.env.USER_PER_PROJECT_LIMIT ?? 1)){
+
+    // if(!checkLimit) {
+    //   return res.status(400).json({error:"check limit return"})
+    // }
+    console.log("cheking project limit",checkLimit.length,"total size",checkLimit,"env file",process.env.USER_PER_PROJECT_LIMIT);
+    const projectLength = checkLimit.length;
+    // await new Promise(res => setTimeout(res, 3000))
+    if (Number(checkLimit.length) > 1){
+      console.log("ya bhitra")
       return res.status(409).json({
         success: false,
         message: "Project Limit Exceed!"
@@ -276,7 +285,7 @@ app.get("/project/:id",requireAuth,sandboxLimiter,async(req,res)=>{
     })
   }
 })
-app.get('/showcase',requireAuth,sandboxLimiter,async(req,res)=>{
+app.get('/showcase',requireAuth,async(req,res)=>{
 
 
   try {
