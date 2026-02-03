@@ -117,8 +117,8 @@ await signIn.social({
 
               const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
               console.log("res on ai input",res)
-                if (!res.success){
-          toast(res.message)
+                if (res.action){
+          toast(res.error)
           setLoadingState?.(false);
           setLinkArrived?.(true);
           return ; 

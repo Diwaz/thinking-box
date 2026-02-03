@@ -57,7 +57,7 @@ type State = z.infer<typeof MessageState>;
 export async function runAgenticManager(userId:string,projectId:string,conversationState:State,clients:Map<string,WebSocket>,sdx:Sandbox){
   conversationState.hasSummazied = false;
 const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash", 
+  model: "gemini-2.5-flash-lite", 
 });
 
 const openAi = new ChatOpenAI({
@@ -205,8 +205,8 @@ if (await contextFile.exists()){
 
   messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
 
-  // const llmResponse = await llmWithTools.invoke(messageWrapper)
-  const llmResponse = await AnthropicWithTools.invoke(messageWrapper)
+  const llmResponse = await llmWithTools.invoke(messageWrapper)
+  // const llmResponse = await AnthropicWithTools.invoke(messageWrapper)
   // const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
   // if (llmResponse.tool_calls?.length == 0){
   //   const messageSegment = llmResponse.content;
@@ -822,8 +822,7 @@ const agent = new StateGraph(MessageState)
         }
       })
       }
-
-       await prisma.conversationHistory.create({
+    await prisma.conversationHistory.create({
     data:{
       projectId,
       type: ConversationType.TEXT_MESSAGE,
@@ -831,6 +830,7 @@ const agent = new StateGraph(MessageState)
       contents: lastMessage,
     }
   })
+   
     }catch(err){
       console.log("Error while saving to db",err)
     }

@@ -44,7 +44,7 @@ const sandboxLimiter = rateLimit({
     },
   }),
   windowMs: 30 * 60 * 1000, // 30 minute
-  max:  5, // 5  attempts per  minute
+  max:  7, // 7  attempts per  minute
   standardHeaders: true,
   legacyHeaders: false,
   message: { 
@@ -212,13 +212,12 @@ app.post('/project',requireAuth,async(req,res)=>{
     })
 
     // if(!checkLimit) {
-    //   return res.status(400).json({error:"check limit return"})
+    //   return res.status(400).json({})
     // }
     console.log("cheking project limit",checkLimit.length,"total size",checkLimit,"env file",process.env.USER_PER_PROJECT_LIMIT);
-    const projectLength = checkLimit.length;
     // await new Promise(res => setTimeout(res, 3000))
-    if (Number(checkLimit.length) > 1){
-      console.log("ya bhitra")
+    if (checkLimit.length >= 1){
+      // console.log("ya bhitra")
       return res.status(409).json({
         success: false,
         message: "Project Limit Exceed!"
@@ -234,6 +233,7 @@ app.post('/project',requireAuth,async(req,res)=>{
     // console.log("/project response",response)
 
   return res.status(200).json({
+    success: true,
     "msg":response
   });
   }catch(err){

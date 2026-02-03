@@ -1,35 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 import React from 'react'
 import AiMsgBox from './aiMessageBox';
-import Image from 'next/image';
-import { AIInput } from './ai-input';
 import { From, MessagePacket } from '@/app/project/[id]/page';
-import { FileNode } from './fileTree';
+import { ToolMessageBox } from './toolMessageBox';
 
 type InputProps = {
   messages: MessagePacket[],
-  createdFile?:string[],
 }
 
 
 
-export const ChatWrapper = ({messages,createdFile}:InputProps) => {
+export const ChatWrapper = ({messages}:InputProps) => {
 
-  const getExtension = (fileName:string): string=>{
-    console.log("filename received in getExtension",fileName)
-    const extension = fileName.split(".").pop()?.toLowerCase();
-    if (extension==="jsx" || extension==="tsx" || extension==="js" || extension==="ts"){
-      return 'react';
-    }else if(extension==="css"){
-      return 'css';
-    }else if (extension==="html"){
-      return "html"
-    }
-    else{
-      return 'rust'
-    }
 
-  }
   return (
     
                   <div className='ConversationWrapper flex  flex-col gap-2  p-5 h-full w-full overflow-y-scroll overflow-x-hidden pb-10   '>
@@ -55,7 +38,9 @@ export const ChatWrapper = ({messages,createdFile}:InputProps) => {
           {item.content}
             </div>
           </div>
-        ):(
+        ) : item.from == From.TOOL ? (
+<ToolMessageBox file={item.content}/>
+        ): (
           <div key={i}>
             {/* {item.content} */}
            <AiMsgBox message={item}/> 
@@ -65,25 +50,7 @@ export const ChatWrapper = ({messages,createdFile}:InputProps) => {
       </> 
   ))
 }
-  {createdFile && createdFile.length > 0 ? (
-    <div>{createdFile.map((file,indx)=>{
-      const fileType = getExtension(file);
-      
-      return (
-        <div key={indx} className=' p-2 flex flex-col gap-2 m-2  w-40 bg-[#121212] hover:border-[#0070F3] border-1 rounded-sm cursor-pointer text-sm font-bold  '>
-          <div>Created:</div>
-          
-      <div className='flex items-center  gap-2 text-sm font-light'>
-        <Image src={`/${fileType}.png`} width={20} height={5} alt={`${fileType}`}/>
-        <span className='text-[#959595]'>src/</span>
-        {file}
-      </div>
-        </div>
-      )
-    })}</div>
-  ):(
-    <div></div>
-  )}
+
           {/* <div className='loader'></div> */}
                      
                     </div>

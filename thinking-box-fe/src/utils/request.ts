@@ -3,9 +3,10 @@ import axios,{AxiosRequestConfig,AxiosResponse} from "axios";
 
 interface RequestOption {
     headers?:Record<string,string>;
-    body?:any
+    body?:unknown
 
 }
+
 type Method = "GET" | "POST";
 
 const handleRequest = async (method:Method,url:string,options?:RequestOption) =>{

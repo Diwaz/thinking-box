@@ -21,7 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 export enum From {
   USER,
-  ASSISTANT
+  ASSISTANT,
+  TOOL
 }
 
 
@@ -31,9 +32,13 @@ export interface MessagePacket {
   content: string,
   from: From,
 }
+interface MessageFromDB {
+  contents: string,
+  messageFrom: "USER" | "ASSISTANT",
+}
 
-function WebBuilder({params}) {
-  const {id} = React.use(params)
+function WebBuilder({params}:{params:{id:string}}) {
+  const {id} = params;
   const loaded = useRef(false);
   console.log("projecID",id)
 
@@ -50,7 +55,6 @@ const [fileTree, setFileTree] = useState<FileNode[]>([]);
 const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 const [isFileTreeLoading, setIsFileTreeLoading] = useState(false);
 const [projectTitle, setProjectTitle] = useState("New Project");
-const [createdFile,setCreatedFile]= useState<string[]>([]);
 const [IsGenerationloading,setIsGenerationLoading] = useState(false);
   const { data: session } = useSession();
   const userId = session?.user.id;
@@ -78,9 +82,11 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
           break;
         case "FILE_CREATION_UPDATE":
           if (data.message.message){
-            console.log("file_creation_update",data.message.message)
             const message = data.message.message.split("/").pop();
-            setCreatedFile(prev=> [...prev,message]) 
+            setMessages(prev=>[...prev,{
+              content:message,
+              from: From.TOOL
+            }])
           }
           break;
         case "THINKING":
@@ -166,7 +172,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
         if (title.length > 0){
           setProjectTitle(title)
         }
-        messageHistory.forEach((msg)=>{
+        messageHistory.forEach((msg:MessageFromDB)=>{
           setMessages((prev)=>[...prev,{
             content:msg.contents,
             from: msg.messageFrom === "USER" ? From.USER : From.ASSISTANT
@@ -234,7 +240,6 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
     // // const hostedURL = sessionStorage.getItem(`project_URL_${id}`);
     // // console.log("fetching here",treeData)
     // if (!treeData){
-      console.log("we go fetching again")
       setLinkArrived(false);
        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
        if (existingData.error){
@@ -282,7 +287,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
     <ResizablePanelGroup direction="horizontal">
       <ResizablePanel defaultSize={35} minSize={25} className='flex flex-col justify-end w-full'>
         <div className="chatSection flex bg-[#05171C] flex-[35%] items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full scrollbar">
-          <ChatWrapper messages={messages} createdFile={createdFile} /> 
+          <ChatWrapper messages={messages}  /> 
           <div className='w-full '>
             <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} setLinkArrived={setLinkArrived} setLoadingState={setIsGenerationLoading}/>
           </div>
@@ -311,7 +316,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
       
       <TabsContent value="chat" className="flex-1  m-0 p-0 h-full overflow-hidden">
         <div className="chatSection bg-[#05171C] flex items-center flex-col justify-end overflow-x-hidden overflow-y-scroll h-full scrollbar">
-          <ChatWrapper messages={messages} createdFile={createdFile} /> 
+          <ChatWrapper messages={messages}  /> 
           <div className='w-full  flex-shrink-0'>
             <AIInput type="secondary" projectId={id} changeFileState={setFileTree} setMessages={setMessages} loadingState={IsGenerationloading} setLinkArrived={setLinkArrived} setLoadingState={setIsGenerationLoading} />
           </div>
