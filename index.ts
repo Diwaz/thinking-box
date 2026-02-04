@@ -50,7 +50,7 @@ const sandboxLimiter = rateLimit({
     },
   }),
   windowMs: 30 * 60 * 1000, // 30 minute
-  max:  7, // 7  attempts per  minute
+  max:  50, // 7  attempts per  minute
   standardHeaders: true,
   legacyHeaders: false,
   message: { 
@@ -92,10 +92,10 @@ const strictLimiter = rateLimit({
 
 
 app.use(express.json());
-app.use(cors({
-  credentials:true,
-  origin:"http://localhost:3000"
-}));
+// app.use(cors({
+//   credentials:true,
+//   origin:"http://localhost:3000"
+// }));
 
 
 

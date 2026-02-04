@@ -205,41 +205,20 @@ INVALID CALLS (will cause errors):
           
           ### WORKING Image Services:
           
-          **1. Placeholder.com (ALWAYS WORKS)**
-          \`\`\`jsx
-          <img src="https://via.placeholder.com/600x400" alt="Placeholder" />
-          <img src="https://via.placeholder.com/300x200/0066cc/ffffff?text=Logo" alt="Logo" />
-          \`\`\`
-          
-          **2. Lorem Picsum (Random photos, ALWAYS WORKS)**
+     
+          **1. Lorem Picsum (Random photos, ALWAYS WORKS)**
           \`\`\`jsx
           <img src="https://picsum.photos/800/600" alt="Random" />
           <img src="https://picsum.photos/id/237/400/300" alt="Dog" />
           \`\`\`
           
-          **3. DummyImage.com (Text placeholders)**
+          **2. DummyImage.com (Text placeholders)**
           \`\`\`jsx
           <img src="https://dummyimage.com/600x400/000/fff&text=Hero+Image" alt="Hero" />
           \`\`\`
           
-          **4. Unsplash Source API (Use SEARCH, not random IDs!)**
-          \`\`\`jsx
-          {/* WRONG - Random IDs don't work */}
-          <img src="https://images.unsplash.com/photo-123456789" />
-          
-          {/* CORRECT - Use search keywords */}
-          <img src="https://source.unsplash.com/800x600/?nature" alt="Nature" />
-          <img src="https://source.unsplash.com/600x400/?city" alt="City" />
-          <img src="https://source.unsplash.com/400x300/?food" alt="Food" />
-          <img src="https://source.unsplash.com/1200x800/?technology" alt="Tech" />
-          
-          SOME LINK EXAMPLES WITH PRODUCTS PHOTOS:
-          https://unsplash.com/s/photos/energy-drink
-          https://unsplash.com/photos/green-and-black-can-on-black-table-6xdju9V_gPk
-
-          \`\`\`
-          
-          **5. Placehold.co (Modern placeholder)**
+                  
+          **3. Placehold.co (Modern placeholder)**
           \`\`\`jsx
           <img src="https://placehold.co/600x400" alt="Placeholder" />
           <img src="https://placehold.co/600x400/EEE/31343C" alt="Custom colors" />
@@ -304,7 +283,7 @@ INVALID CALLS (will cause errors):
           \`\`\`jsx
           <img src="https://picsum.photos/800/600" alt="Image" />
           // OR
-          <img src="https://via.placeholder.com/800x600" alt="Image" />
+          <img src="https://placehold.co/600x400" alt="Image" />
           \`\`\`
           
           ---
