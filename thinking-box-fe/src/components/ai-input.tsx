@@ -7,7 +7,7 @@ import {  ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import handleRequest from "@/utils/request"
 import { FileNode } from "./fileTree"
-import { From, MessagePacket } from "@/app/project/[id]/page"
+import {  MessagePacket } from "@/app/project/[id]/page"
 import { toast } from "sonner"
 import { Spinner } from "./ui/spinner"
 import { signIn, useSession } from "@/lib/auth-client"
@@ -24,6 +24,12 @@ type InputProps = {
  setLoadingState?: React.Dispatch<React.SetStateAction<boolean>>;
   // onSuggestionSelected?: (prompt: string) => void,
 }
+ enum MessageFrom {
+  USER,
+  ASSISTANT,
+  TOOL
+}
+
 
 
 export function AIInput({
@@ -50,7 +56,7 @@ useEffect(()=>{
     // }
 await signIn.social({
 									provider: "google",
-									callbackURL: "http://localhost:3000",
+									callbackURL: `${process.env.NEXT_PUBLIC_CALLBACK}`,
 									fetchOptions: {
 										onRequest: () => {
 											setIsLoading(true);
@@ -82,7 +88,7 @@ await signIn.social({
           // throw new Error(hasProject.error);
                   }
                   setIsLoading(false);
-                  console.log("uuid",projectId)
+                  // console.log("uuid",projectId)
                   router.push(`/project/${projectId}`)
                 }catch(err:unknown){
                   if (err instanceof Error){
@@ -95,7 +101,7 @@ await signIn.social({
                   setLoadingState?.(false);
                 }
     }else{
-        console.log("handle secondary")
+        // console.log("handle secondary")
         try {
           
           const options = {
@@ -107,7 +113,7 @@ await signIn.social({
           setMessages!(prev => [...prev,
             {
               content: value,
-              from:From.USER 
+              from:MessageFrom.USER 
             }
           ]); 
           setValue(""); 
@@ -115,8 +121,8 @@ await signIn.social({
           setIsLoading(true);
           
 
-              const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
-              console.log("res on ai input",res)
+              const res = await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/prompt`,options)    
+              // console.log("res on ai input",res)
                 if (res.action){
           toast(res.error)
           setLoadingState?.(false);

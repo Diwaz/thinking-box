@@ -19,7 +19,8 @@ import { PreviewWrapper } from '@/components/previewPanel';
 import { AIInput } from '@/components/ai-input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-export enum From {
+
+ enum MessageFrom {
   USER,
   ASSISTANT,
   TOOL
@@ -30,18 +31,18 @@ export enum From {
 
 export interface MessagePacket {
   content: string,
-  from: From,
+  from: MessageFrom,
 }
 interface MessageFromDB {
   contents: string,
   messageFrom: "USER" | "ASSISTANT",
 }
+type Params = Promise<{ id: string }>;
+function WebBuilder({params}:{params: Params}) {
 
-function WebBuilder({params}:{params:{id:string}}) {
-  const {id} = params;
+  const {id} = React.use(params);
   const loaded = useRef(false);
-  console.log("projecID",id)
-
+  // console.log("projecID",id)
    
   
   const [projectUri, setProjectUri] = useState("")
@@ -65,10 +66,10 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
   useEffect(()=>{
     if (loaded.current) return ;
     loaded.current = true;
-    const ws = new WebSocket(`ws://localhost:8080/?userId=${userId}`)
+    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_BACKEND_WS}/?userId=${userId}`)
     
     ws.onmessage = (e) => {
-      console.log("user connected")
+      // console.log("user connected")
       const data = JSON.parse(e.data);
       // console.log("msg from socket",data.message.message)
       switch(data.message.action){
@@ -76,7 +77,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
           setMessages(prev => [...prev,
             {
               content: data.message.message,
-              from: From.ASSISTANT
+              from: MessageFrom.ASSISTANT
             }
           ]); 
           break;
@@ -85,7 +86,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
             const message = data.message.message.split("/").pop();
             setMessages(prev=>[...prev,{
               content:message,
-              from: From.TOOL
+              from: MessageFrom.TOOL
             }])
           }
           break;
@@ -130,12 +131,12 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
     
     const fetchData = async ()=>{
       const projectData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/${id}`)
-      console.log("why project not found",projectData)
+      // console.log("why project not found",projectData)
        if (projectData.error){
           toast(projectData.error)
           return ;
         }
-      console.log("initial prompt from server",projectData.conversationHistory)
+      // console.log("initial prompt from server",projectData.conversationHistory)
 
         //RENDER-CONDITION: On First time screen
       if (projectData.conversationHistory.length === 0 ){
@@ -143,10 +144,10 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
           setMessages(prev => [...prev,
             {
               content: projectData.initialPrompt,
-              from: From.USER
+              from: MessageFrom.USER
             }
           ]); 
-        console.log("hello no conv history")
+        // console.log("hello no conv history")
           setIsGenerationLoading(true);
           setLinkArrived(false);
         const options = {
@@ -155,12 +156,12 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
             projectId:id,
           }
         }
-          const res = await handleRequest("POST","http://localhost:8080/prompt",options)    
+          const res = await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/prompt`,options)    
         if (res.error){
           toast(res.error)
           return ;
         }
-          console.log("res from pes",res)
+          // console.log("res from pes",res)
           // setResponse(res.uri);
           setProjectUri(res.uri);
 
@@ -175,7 +176,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
         messageHistory.forEach((msg:MessageFromDB)=>{
           setMessages((prev)=>[...prev,{
             content:msg.contents,
-            from: msg.messageFrom === "USER" ? From.USER : From.ASSISTANT
+            from: msg.messageFrom === "USER" ? MessageFrom.USER : MessageFrom.ASSISTANT
           }])
         })
 
@@ -188,7 +189,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
       // console.log("we here on sessionStorage",JSON.parse(treeData))
       // console.log("response uri",response)
       setIsGenerationLoading(false);
-      console.log("we already have project datas",projectURL)
+      // console.log("we already have project datas",projectURL)
       setFileTree(JSON.parse(treeData)); 
       // setResponse(projectURL);      
       setProjectUri(projectURL)
@@ -201,7 +202,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
 
         // setIsFileTreeLoading(true);
         setIsGenerationLoading(false);
-        console.log("should not reach here on the 1st render")
+        // console.log("should not reach here on the 1st render")
       const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/history/${id}`)
        if (existingData.error){
           toast(existingData.error)
@@ -250,7 +251,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
        if (title){
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
-      console.log("URL",existingData.uri)
+      // console.log("URL",existingData.uri)
       sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
       sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
       setFileTree(tree || []); 

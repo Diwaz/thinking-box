@@ -24,10 +24,13 @@ import { useSession } from '@/lib/auth-client';
 import { Monitor, Tablet, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
-export enum From {
+ enum From {
   USER,
-  ASSISTANT
+  ASSISTANT,
+  TOOL
 }
+
+
 
 
 
@@ -35,9 +38,11 @@ export interface MessagePacket {
   content: string,
   from: From,
 }
-
-function ViewProject({params}) {
-  const {id} = React.use(params)
+type Params = Promise<{ id: string }>;
+function ViewProject({params}:{params:Params}) {
+  const paramsId = React.use(params)
+  const {id} = paramsId;
+  console.log("id from url",id)
   const loaded = useRef(false);
 
    
@@ -80,7 +85,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
     
     // RENDER-CONDITION: on next-time when user came back aftersometimes but within 30min or on same session
     if (treeData && projectURL && localProjectTitle){
-      console.log("we already have project datas",projectURL)
+      // console.log("we already have project datas",projectURL)
       setFileTree(JSON.parse(treeData)); 
       // setResponse(projectURL);      
       setProjectUri(projectURL)
@@ -92,7 +97,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
       }else {
         
         // setIsFileTreeLoading(true);
-        console.log("should not reach here on the 1st render")
+        // console.log("should not reach here on the 1st render")
         const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase/history/${id}`)
         // console.log("response projectsss",response.action)
         if (existingData.error){
@@ -126,7 +131,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
   useEffect(()=>{
     const fetchUpdate =async ()=>{
   
-      console.log("we go fetching again")
+      // console.log("we go fetching again")
       setLinkArrived(false);
        const existingData = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/showcase/history/${id}`)
                       if (existingData.error){
@@ -137,7 +142,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
        if (title){
       const filesData = existingData.fileContent
       const tree = buildFileTree(filesData)  
-      console.log("URL",existingData.uri)
+      // console.log("URL",existingData.uri)
       sessionStorage.setItem(`project_tree_${id}`,JSON.stringify(tree))
       sessionStorage.setItem(`project_URL_${id}`,existingData.uri);
       setFileTree(tree || []); 

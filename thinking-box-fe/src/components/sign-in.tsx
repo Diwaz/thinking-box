@@ -28,7 +28,7 @@ export default function SignIn() {
 							onClick={async () => {
 								await signIn.social({
 									provider: "google",
-									callbackURL: "http://localhost:3000",
+									callbackURL: `${process.env.NEXT_PUBLIC_CALLBACK}`,
 									fetchOptions: {
 										onRequest: () => {
 											setLoading(true);

@@ -168,7 +168,7 @@ export  function  AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 const fetchProjects =async ()=>{
                   try {
 
-                    const response = await handleRequest("GET","http://localhost:8080/project/list");
+                    const response = await handleRequest("GET",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project/list`);
                     // console.log("response projectsss",response.action)
                     // if (response.error){
                     //   toast(response.error)

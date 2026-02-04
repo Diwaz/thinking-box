@@ -1,12 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 import React from 'react'
 import AiMsgBox from './aiMessageBox';
-import { From, MessagePacket } from '@/app/project/[id]/page';
+import {  MessagePacket } from '@/app/project/[id]/page';
 import { ToolMessageBox } from './toolMessageBox';
 
 type InputProps = {
   messages: MessagePacket[],
 }
+ enum MessageFrom {
+  USER,
+  ASSISTANT,
+  TOOL
+}
+
 
 
 
@@ -23,7 +29,7 @@ export const ChatWrapper = ({messages}:InputProps) => {
   messages.map((item, i) => (
      <>
       {
-        item.from == From.USER ? (
+        item.from == MessageFrom.USER ? (
           <div key={i} className=' flex flex-col w-full items-end gap-2 '>
    <Avatar className='w-7 h-7 relative'>
       <AvatarImage
@@ -38,7 +44,7 @@ export const ChatWrapper = ({messages}:InputProps) => {
           {item.content}
             </div>
           </div>
-        ) : item.from == From.TOOL ? (
+        ) : item.from == MessageFrom.TOOL ? (
 <ToolMessageBox file={item.content}/>
         ): (
           <div key={i}>

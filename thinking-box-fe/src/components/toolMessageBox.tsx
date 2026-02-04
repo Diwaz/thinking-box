@@ -6,7 +6,7 @@ import React from 'react'
 
 
   const getExtension = (fileName:string): string=>{
-    console.log("filename received in getExtension",fileName)
+    // console.log("filename received in getExtension",fileName)
     const extension = fileName.split(".").pop()?.toLowerCase();
     if (extension==="jsx" || extension==="tsx" || extension==="js" || extension==="ts"){
       return 'react';

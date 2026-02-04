@@ -69,7 +69,7 @@ export const ShowcaseProjects = () => {
         setShowcaseProjects(showcaseProject);
         
       } catch (err) {
-        console.error("Failed to fetch showcase projects:", err);
+        // console.error("Failed to fetch showcase projects:", err);
         setError("Failed to load projects");
       } finally {
         setLoading(false);

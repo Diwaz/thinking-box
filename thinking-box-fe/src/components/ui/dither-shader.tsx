@@ -400,7 +400,7 @@ export const DitherShader: React.FC<DitherShaderProps> = ({
           displayHeight,
         );
       } catch {
-        console.error("Could not get image data. CORS issue?");
+        // console.error("Could not get image data. CORS issue?");
         return;
       }
 
@@ -435,7 +435,7 @@ export const DitherShader: React.FC<DitherShaderProps> = ({
       };
 
       img.onerror = () => {
-        console.error("Failed to load image for DitherShader:", src);
+        // console.error("Failed to load image for DitherShader:", src);
       };
     }
 
