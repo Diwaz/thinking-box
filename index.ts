@@ -29,8 +29,14 @@ const server = createServer(app);
 const wss = new WebSocketServer({server})
 
 
-const redisClient = createClient();
-
+const redisClient = createClient({
+  username: process.env.REDIS_USERNAME,
+  password: process.env.REDIS_PASSWORD,
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT)
+  }
+});
 redisClient.connect().catch(console.error);
 
 
@@ -174,6 +180,14 @@ const createPromptParser = baseProjectParser.extend({
   
   prompt: z.string().min(1,{message:"String must be at least 5 character long"})
 })
+
+app.get('/health',(req,res)=>{
+  return res.status(200).json({
+    sucess: true,
+    health:"ok"
+  })
+})
+
 app.get('/project/list',requireAuth,async(req,res)=>{
   try {
 

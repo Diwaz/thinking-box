@@ -7,6 +7,7 @@
         "@e2b/code-interpreter": "^2.0.1",
         "@langchain/anthropic": "^1.3.12",
         "@langchain/core": "^1.0.0-alpha.6",
+        "@langchain/google-genai": "^2.1.15",
         "@langchain/langgraph": "^1.0.0-alpha.5",
         "@langchain/openai": "^1.2.3",
         "@prisma/client": "^6.17.1",
@@ -60,6 +61,8 @@
 
     "@e2b/code-interpreter": ["@e2b/code-interpreter@2.0.1", "", { "dependencies": { "e2b": "^2.2.1" } }, "sha512-CbH5tU5lI0QyO+vTOdW9mZGpuVImmH96SsRqEduplrv7hplINMsvoQESvcDavdJWjurK3Oe/Ho8QtpDb1bBKag=="],
 
+    "@google/generative-ai": ["@google/generative-ai@0.24.1", "", {}, "sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q=="],
+
     "@isaacs/balanced-match": ["@isaacs/balanced-match@4.0.1", "", {}, "sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ=="],
 
     "@isaacs/brace-expansion": ["@isaacs/brace-expansion@5.0.0", "", { "dependencies": { "@isaacs/balanced-match": "^4.0.1" } }, "sha512-ZT55BDLV0yv0RBm2czMiZ+SqCGO7AvmOM3G/w2xhVPH+te0aKgFjmBvGlL1dH+ql2tgGO3MVrbb3jCKyvpgnxA=="],
@@ -71,6 +74,8 @@
     "@langchain/anthropic": ["@langchain/anthropic@1.3.12", "", { "dependencies": { "@anthropic-ai/sdk": "^0.71.0", "zod": "^3.25.76 || ^4" }, "peerDependencies": { "@langchain/core": "1.1.17" } }, "sha512-CeICvFLsMLau5RjGHqUsZKAdEWrBZYebVnufRRtGlkg7nq3BqZSK2zVAAcf37q7e5u3WyPzBTWAHwR2adfpMCA=="],
 
     "@langchain/core": ["@langchain/core@1.0.0-alpha.6", "", { "dependencies": { "@cfworker/json-schema": "^4.0.2", "ansi-styles": "^5.0.0", "camelcase": "6", "decamelize": "1.2.0", "js-tiktoken": "^1.0.12", "langsmith": "^0.3.64", "mustache": "^4.2.0", "p-queue": "^6.6.2", "p-retry": "4", "uuid": "^10.0.0", "zod": "^3.25.76 || ^4" } }, "sha512-YjYKpz72A6cSS+gwxahpGMT3MhUu7eYR8GpvkcXWbIGTGcuAlPhfVuiQbxtelbIm/cMetp+ZCNhfTd48L3/KqA=="],
+
+    "@langchain/google-genai": ["@langchain/google-genai@2.1.15", "", { "dependencies": { "@google/generative-ai": "^0.24.0", "uuid": "^11.1.0" }, "peerDependencies": { "@langchain/core": "1.1.19" } }, "sha512-Pg+mbMP1q83T/YWjF9E9uKq/D+GhnKS/xOQQuGUIM4wjGlA4BBKtjSzjVnIl66l3CUemVMCu8XYfUnDPbHmm1A=="],
 
     "@langchain/langgraph": ["@langchain/langgraph@1.0.0-alpha.5", "", { "dependencies": { "@langchain/langgraph-checkpoint": "^0.1.1", "@langchain/langgraph-sdk": "~0.1.6", "uuid": "^10.0.0" }, "peerDependencies": { "@langchain/core": ">=0.3.58 < 0.4.0 || ^1.0.0-alpha", "zod": "^3.25.32 || ^4.1.0", "zod-to-json-schema": "^3.x" }, "optionalPeers": ["zod-to-json-schema"] }, "sha512-Sg0LZ/zb0osMT+2/poTRH6GbmzSYxPVzZPXikjryCFMCw52HGbq0sLEXFsaqfs+1HCcDs1Ob6IPw8IucE5pM9Q=="],
 
@@ -927,6 +932,8 @@
     "zod": ["zod@4.3.5", "", {}, "sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g=="],
 
     "@langchain/core/zod": ["zod@4.1.12", "", {}, "sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ=="],
+
+    "@langchain/google-genai/uuid": ["uuid@11.1.0", "", { "bin": { "uuid": "dist/esm/bin/uuid" } }, "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A=="],
 
     "@langchain/langgraph-sdk/uuid": ["uuid@9.0.1", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA=="],
 

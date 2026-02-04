@@ -1,0 +1,7 @@
+node_modules
+
+thinking-box-fe
+
+.env
+dist 
+build

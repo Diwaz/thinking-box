@@ -1,0 +1,38 @@
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+      interval: 1m
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  thinking-box-be:
+    image: y2kdwz/thinking-box:latest
+    container_name: tb
+    volumes:
+      - /home/ubuntu/.oci:/root/.oci
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: thinking-box
+  
