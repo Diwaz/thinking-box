@@ -205,8 +205,8 @@ if (await contextFile.exists()){
 
   messageWrapper.push(new SystemMessage(dynamicPrompt),...state.messages);
 
-  const llmResponse = await llmWithTools.invoke(messageWrapper)
-  // const llmResponse = await AnthropicWithTools.invoke(messageWrapper)
+  // const llmResponse = await llmWithTools.invoke(messageWrapper)
+  const llmResponse = await AnthropicWithTools.invoke(messageWrapper)
   // const llmResponse = await OpenAiWithTools.invoke(messageWrapper)
   // if (llmResponse.tool_calls?.length == 0){
   //   const messageSegment = llmResponse.content;
