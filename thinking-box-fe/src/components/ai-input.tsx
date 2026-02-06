@@ -1,13 +1,13 @@
 "use client"
 
-import {  useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import {  ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import handleRequest from "@/utils/request"
 import { FileNode } from "./fileTree"
-import {  MessagePacket } from "@/app/project/[id]/page"
+import { MessagePacket } from "@/app/project/[id]/page"
 import { toast } from "sonner"
 import { Spinner } from "./ui/spinner"
 import { signIn, useSession } from "@/lib/auth-client"
@@ -21,10 +21,10 @@ type InputProps = {
   setMessages?: React.Dispatch<React.SetStateAction<MessagePacket[]>>;
   setLinkArrived?: React.Dispatch<React.SetStateAction<boolean>>;
   loadingState?: boolean,
- setLoadingState?: React.Dispatch<React.SetStateAction<boolean>>;
+  setLoadingState?: React.Dispatch<React.SetStateAction<boolean>>;
   // onSuggestionSelected?: (prompt: string) => void,
 }
- enum MessageFrom {
+enum MessageFrom {
   USER,
   ASSISTANT,
   TOOL
@@ -43,115 +43,115 @@ export function AIInput({
 }: InputProps) {
   const router = useRouter();
   const [value, setValue] = useState("")
-  const [Isloading,setIsLoading] = useState(false);
-  const {data:session} = useSession()
+  const [Isloading, setIsLoading] = useState(false);
+  const { data: session } = useSession()
   const userId = session?.user.id;
 
-useEffect(()=>{
-  // const {data:session} = useSession()
-  const preloginPrompt = sessionStorage.getItem('preloginPrompt');
-  if (preloginPrompt){
-    setValue(preloginPrompt);
-    sessionStorage.removeItem('preloginPrompt');
-  }
-},[])
+  useEffect(() => {
+    // const {data:session} = useSession()
+    const preloginPrompt = sessionStorage.getItem('preloginPrompt');
+    if (preloginPrompt) {
+      setValue(preloginPrompt);
+      sessionStorage.removeItem('preloginPrompt');
+    }
+  }, [])
 
-  const handleLogin = async ()=>{
+  const handleLogin = async () => {
     // if (value.length > 0 ){
     // }
-if (value.length > 0){
-                  sessionStorage.setItem('preloginPrompt',value);
-                }
-await signIn.social({
-									provider: "google",
-									callbackURL: `${process.env.NEXT_PUBLIC_CALLBACK}`,
-									fetchOptions: {
-										onRequest: () => {
-											setIsLoading(true);
-										},
-										onResponse: () => {
-											setIsLoading(false);
-										},
-									},
-								});
-                
+    if (value.length > 0) {
+      sessionStorage.setItem('preloginPrompt', value);
+    }
+    await signIn.social({
+      provider: "google",
+      callbackURL: `${process.env.NEXT_PUBLIC_CALLBACK}`,
+      fetchOptions: {
+        onRequest: () => {
+          setIsLoading(true);
+        },
+        onResponse: () => {
+          setIsLoading(false);
+        },
+      },
+    });
+
   }
-  const handleSubmit = async(type:string) =>{
-    if (type === "initial"){
-                 const projectId = crypto.randomUUID();
-                const options ={
-                  body:{
-                    projectId,
-                    initialPrompt:value
-                  }
-                }
-                try {
-                  setIsLoading(true);
-                  setLoadingState?.(true);
-                   const hasProject =await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`,options)
-                   if (!hasProject.success){
+  const handleSubmit = async (type: string) => {
+    if (type === "initial") {
+      const projectId = crypto.randomUUID();
+      const options = {
+        body: {
+          projectId,
+          initialPrompt: value
+        }
+      }
+      try {
+        setIsLoading(true);
+        setLoadingState?.(true);
+        const hasProject = await handleRequest("POST", `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/project`, options)
+        if (!hasProject.success) {
           toast(hasProject.message)
           setIsLoading(false);
           setLoadingState?.(false);
-          return ;
+          return;
           // throw new Error(hasProject.error);
-                  }
-                  setIsLoading(false);
-                  // console.log("uuid",projectId)
-                  router.push(`/project/${projectId}`)
-                }catch(err:unknown){
-                  if (err instanceof Error){
-                    toast.error(err.message)
-                  }else {
-                    toast.error("Something went wrong")
-                  }
-                  // duplicate for testing
-                  setIsLoading(false);
-                  setLoadingState?.(false);
-                }
-    }else{
-        // console.log("handle secondary")
-        try {
-          
-          const options = {
-            body :{
-              prompt: value,
-              projectId,
-            }
-          }
-          setMessages!(prev => [...prev,
-            {
-              content: value,
-              from:MessageFrom.USER 
-            }
-          ]); 
-          setValue(""); 
-          setLoadingState?.(true);
-          setIsLoading(true);
-          
+        }
+        setIsLoading(false);
+        // console.log("uuid",projectId)
+        router.push(`/project/${projectId}`)
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          toast.error(err.message)
+        } else {
+          toast.error("Something went wrong")
+        }
+        // duplicate for testing
+        setIsLoading(false);
+        setLoadingState?.(false);
+      }
+    } else {
+      // console.log("handle secondary")
+      try {
 
-              const res = await handleRequest("POST",`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/prompt`,options)    
-              // console.log("res on ai input",res)
-                if (res.action){
+        const options = {
+          body: {
+            prompt: value,
+            projectId,
+          }
+        }
+        setMessages!(prev => [...prev,
+        {
+          content: value,
+          from: MessageFrom.USER
+        }
+        ]);
+        setValue("");
+        setLoadingState?.(true);
+        setIsLoading(true);
+
+
+        const res = await handleRequest("POST", `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/prompt`, options)
+        // console.log("res on ai input",res)
+        if (res.action) {
           toast(res.error)
           setLoadingState?.(false);
           setLinkArrived?.(true);
-          return ; 
-                }
-                    sessionStorage.removeItem(`project_tree_${projectId}`)
-                    
-                    sessionStorage.removeItem(`project_URL_${projectId}`);
-                    changeFileState?.([]);
-                    setLinkArrived?.(false);
-        }catch(err){
-          if (err instanceof Error){
-            toast.error(err.message);
-          }else{
-            toast.error("Something went wrong!")
-          }
-
-          setIsLoading(false);
+          return;
         }
+        sessionStorage.removeItem(`project_tree_${projectId}`)
+
+        sessionStorage.removeItem(`project_URL_${projectId}`);
+        changeFileState?.([]);
+        setLinkArrived?.(false);
+      } catch (err) {
+        if (err instanceof Error) {
+          toast.error(err.message);
+        } else {
+          toast.error("Something went wrong!")
+        }
+
+        setIsLoading(false);
+      }
 
 
     }
@@ -173,121 +173,124 @@ await signIn.social({
       >
 
         <form
-        onSubmit={(e)=>{
-          e.preventDefault();
-          if (value.trim() && userId){
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (value.trim() && userId) {
 
-            handleSubmit(type);
-            return ;
-          }
-          handleLogin()
-        }}
+              handleSubmit(type);
+              return;
+            }
+            if (!userId) {
+              handleLogin()
+              return;
+            }
+          }}
         >
 
-        <Textarea
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-         onKeyDown={(e)=>{
-          if (e.key === "Enter" && !e.shiftKey){
-            e.preventDefault();
-            e.currentTarget.form?.requestSubmit();
+          <Textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
 
-          }
-         }} 
-          onInput={e => {
-            const target = e.currentTarget;
-            target.style.height = "auto";
-            target.style.height = Math.min(target.scrollHeight, 240) + "px"; // 240px = max-height
-          }}
-          placeholder={`${type==="initial" ? "Explain your thought (e.g: create a landing page for t-shirt shop)": "Expand your idea"}`}
-          className="min-h-20 resize-none border-0  px-2 text-xs leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-base scrollbar"
-          aria-label="Prompt"
-          style={{ maxHeight: "240px", overflowY: "auto" }}
+              }
+            }}
+            onInput={e => {
+              const target = e.currentTarget;
+              target.style.height = "auto";
+              target.style.height = Math.min(target.scrollHeight, 240) + "px"; // 240px = max-height
+            }}
+            placeholder={`${type === "initial" ? "Explain your thought (e.g: create a landing page for t-shirt shop)" : "Expand your idea"}`}
+            className="min-h-20 resize-none border-0  px-2 text-xs leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-base scrollbar"
+            aria-label="Prompt"
+            style={{ maxHeight: "240px", overflowY: "auto" }}
           />
           {type === "secondary" ? (
-            
+
             <div className=" flex items-center justify-end gap-3">
 
-          <div className="flex items-center gap-2">
-           
-            <Button
-              type="button"
-              className="h-9 w-9 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer"
-              aria-label="Send"
-              disabled={value.length < 1 || loadingState}
-              onClick={() => {
-                handleSubmit(type);
-              }}
-              >
-              {loadingState ? (
-                <Spinner/>
-              )
-              : (
-                
-                <ArrowRight className="h-4 w-4" />
-              )
-            }
-            </Button>
-          </div>
-        </div>
-          ):(
-            
+              <div className="flex items-center gap-2">
+
+                <Button
+                  type="button"
+                  className="h-9 w-9 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer"
+                  aria-label="Send"
+                  disabled={value.length < 1 || loadingState}
+                  onClick={() => {
+                    handleSubmit(type);
+                  }}
+                >
+                  {loadingState ? (
+                    <Spinner />
+                  )
+                    : (
+
+                      <ArrowRight className="h-4 w-4" />
+                    )
+                  }
+                </Button>
+              </div>
+            </div>
+          ) : (
+
             <div className=" flex items-center justify-between">
 
               <div className="font-bold">
                 {value.trim().length}
                 <span className="text-muted-foreground font-light">/2000</span>
               </div>
-          <div className="flex items-center gap-2">
-            {userId ? (<Button
-              type="button"
-              className="h-9 p-2 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer "
-              disabled={value.trim().length < 1 || Isloading || value.length > 2000}
-              aria-label="Send"
-              onClick={() => {
-                handleSubmit(type);
-              }}
-              >
-              <div>
-              Generate
-              </div>
-                 {Isloading ? (
-                   <Spinner/>
+              <div className="flex items-center gap-2">
+                {userId ? (<Button
+                  type="button"
+                  className="h-9 p-2 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer "
+                  disabled={value.trim().length < 1 || Isloading || value.length > 2000}
+                  aria-label="Send"
+                  onClick={() => {
+                    handleSubmit(type);
+                  }}
+                >
+                  <div>
+                    Generate
+                  </div>
+                  {Isloading ? (
+                    <Spinner />
                   )
-                  : (
-                    
-                    <ArrowRight className="h-4 w-4" />
-                  )
-                }
+                    : (
 
-            </Button>):(<Button
-              type="button"
-              className="h-9 p-2 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer "
-              // disabled={}
-              aria-label="Send"
-              onClick={() => {
-                handleLogin();
-              }}
-              >
-              <div>
-              Login
-              </div>
-                 {Isloading ? (
-                   <Spinner/>
-                  )
-                  : (
-                    
-                    <ArrowRight className="h-4 w-4" />
-                  )
-                }
+                      <ArrowRight className="h-4 w-4" />
+                    )
+                  }
 
-            </Button>)}
-            
-          </div>
-        </div>
+                </Button>) : (<Button
+                  type="button"
+                  className="h-9 p-2 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer "
+                  // disabled={}
+                  aria-label="Send"
+                  onClick={() => {
+                    handleLogin();
+                  }}
+                >
+                  <div>
+                    Login
+                  </div>
+                  {Isloading ? (
+                    <Spinner />
+                  )
+                    : (
+
+                      <ArrowRight className="h-4 w-4" />
+                    )
+                  }
+
+                </Button>)}
+
+              </div>
+            </div>
           )}
-          </form>
-{/* form ending */}
+        </form>
+        {/* form ending */}
       </div>
 
       {/* <p className="mt-3 text-xs text-muted-foreground">Design-only UI. Functionality coming soon.</p> */}
