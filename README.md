@@ -85,7 +85,7 @@ The LLM processing pipeline handles code generation, context summarisation and p
 The AI agent operates through a simple agentic loop that orchestrates the entire website generation process, above image is the example on how normally the tool call is done in the agentic development and how final response reaches to the end user. 
 
 1. **InputValidation Node:** The entrypoint of the graph , It rejects invalid user query and generates title if valid and relevent 
-        - *Routes:*Decides whether to end the user operation or to move furhter
+    - *Routes:* Decides whether to end the user operation or to move furhter
 
 2. **EnhancedPrompt Node:** Intercepts  user queries and rewrites them using advanced prompt engineering techniques to maximize LLM performance. 
 
@@ -140,9 +140,9 @@ bun install
 
 Frontend `.env`:
 ```env
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_BACKEND_WS=ws://localhost:8080
+NEXT_PUBLIC_CALLBACK=http://localhost:3000
 ```
 
 Backend `.env`:
