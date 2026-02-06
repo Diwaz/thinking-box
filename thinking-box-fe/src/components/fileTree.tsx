@@ -1,8 +1,7 @@
 "use client";
 
 import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
-import handleRequest from '@/utils/request';
-import React, { useEffect, useState } from 'react'
+import React, {  useState } from 'react'
 
 
 export interface FileNode{

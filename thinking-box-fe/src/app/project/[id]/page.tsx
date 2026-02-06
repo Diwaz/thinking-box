@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {  Codesandbox, Command } from 'lucide-react';
 
 import handleRequest from '@/utils/request';
@@ -41,7 +41,7 @@ type Params = Promise<{ id: string }>;
 function WebBuilder({params}:{params: Params}) {
 
   const {id} = React.use(params);
-  const loaded = useRef(false);
+  // const loaded = useRef(false);
   // console.log("projecID",id)
    
   
@@ -64,8 +64,8 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
  
 
   useEffect(()=>{
-    if (loaded.current) return ;
-    loaded.current = true;
+    // if (loaded.current) return ;
+    // loaded.current = true;
     const ws = new WebSocket(`${process.env.NEXT_PUBLIC_BACKEND_WS}/?userId=${userId}`)
     
     ws.onmessage = (e) => {
@@ -227,7 +227,7 @@ const [IsGenerationloading,setIsGenerationLoading] = useState(false);
     setIsFileTreeLoading(false);
     fetchData();
 
-    // return () => ws.close();
+    return () => ws.close();
   },[])
 
 

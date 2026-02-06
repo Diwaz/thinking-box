@@ -92,10 +92,14 @@ const strictLimiter = rateLimit({
 
 
 app.use(express.json());
-// app.use(cors({
-//   credentials:true,
-//   origin:"http://localhost:3000"
-// }));
+
+if (process.env.ENVIRONMENT === "DEVELOPMENT"){
+app.use(cors({
+  credentials:true,
+  origin:"http://localhost:3000"
+}));
+}
+
 
 
 
@@ -225,13 +229,7 @@ app.post('/project',requireAuth,async(req,res)=>{
       }
     })
 
-    // if(!checkLimit) {
-    //   return res.status(400).json({})
-    // }
-    console.log("cheking project limit",checkLimit.length,"total size",checkLimit,"env file",process.env.USER_PER_PROJECT_LIMIT);
-    // await new Promise(res => setTimeout(res, 3000))
     if (checkLimit.length >= 1){
-      // console.log("ya bhitra")
       return res.status(409).json({
         success: false,
         message: "Project Limit Exceed!"
@@ -522,6 +520,7 @@ app.post("/prompt",requireAuth,strictLimiter,async (req,res)=>{
       return res.status(404).json({
         success: false,
         message:"Project Not Found!"
+        
       })
     }
 

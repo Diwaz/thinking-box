@@ -37,7 +37,7 @@ const userId = session?.user.id;
 
 
       </DitherShader>
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar  />
       <section className="absolute  top-0 h-full  w-full   mx-auto flex  flex-col  justify-center items-center  text-center md:pt-44">
         <div className=" absolute flex items-center  justify-between  w-full top-0 left-0  lg:hidden">

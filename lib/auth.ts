@@ -6,7 +6,7 @@ import { PrismaClient } from "../generated/prisma";
 const prisma = new PrismaClient();
 export const auth = betterAuth({
     baseURL:process.env.BETTER_AUTH_URL,
-    trustedOrigins:["https://thinking-box.civcam.xyz"],
+    trustedOrigins:[`${process.env.BETTER_AUTH_CALLBACK_URL || "http://localhost:3000"}`],
     database: prismaAdapter(prisma, {
         provider: "postgresql", 
     }),

@@ -1,13 +1,11 @@
 "use client"
 
 import {
-  Divide,
   Folder,
   Forward,
   Frame,
   MoreHorizontal,
   Trash2,
-  type LucideIcon,
 } from "lucide-react"
 
 import {

@@ -2,14 +2,9 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
-  BookOpen,
   Bot,
-  Command,
   Frame,
-  GalleryVerticalEnd,
   FileKey,
-  Drone,
   Map,
   Codesandbox,
   PieChart,
@@ -31,9 +26,7 @@ import {
 } from "@/components/ui/sidebar"
 import handleRequest from "@/utils/request"
 import SignIn from "./sign-in"
-import { getSession } from "better-auth/api"
 import { authClient } from "@/lib/auth-client"
-import { toast } from "sonner"
 
 // This is sample data.
 

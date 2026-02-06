@@ -70,7 +70,18 @@ const [projectTitle, setProjectTitle] = useState("New Project");
         return '100%';
     }
   };
- 
+
+   const copyButton = async () => {
+    try {
+      await navigator.clipboard.writeText(projectUri || "https://google.com");
+      toast("Copied to clipboard");
+    }catch(e){
+      toast("Unable to find clipboard");
+      console.log(e);
+    }
+  }
+
+
 
   useEffect(()=>{
     if (loaded.current) return ;
@@ -230,7 +241,7 @@ const [projectTitle, setProjectTitle] = useState("New Project");
 
         {/* Copy and External Links - Right */}
         <div className='flex gap-5 px-2 items-center justify-center'>
-          <div className='px-1 rounded-sm cursor-pointer'>
+          <div className='px-1 rounded-sm cursor-pointer' onClick={copyButton}>
             <Copy width={15} className='text-[#949494] hover:text-white'/>   
           </div>
           <div className='px-1 rounded-sm cursor-pointer'>

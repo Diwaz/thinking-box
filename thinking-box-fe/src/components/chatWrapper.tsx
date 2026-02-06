@@ -3,6 +3,7 @@ import React from 'react'
 import AiMsgBox from './aiMessageBox';
 import {  MessagePacket } from '@/app/project/[id]/page';
 import { ToolMessageBox } from './toolMessageBox';
+import { Skeleton } from './ui/skeleton';
 
 type InputProps = {
   messages: MessagePacket[],
@@ -61,7 +62,12 @@ export const ChatWrapper = ({messages}:InputProps) => {
                      
                     </div>
                     ):(
-                      <div>Empty</div>
+                      <div className='flex flex-col gap-2  '>
+                        <div className='w-full  flex justify-end'>
+                        <Skeleton className='h-10 w-10 rounded-full'/>
+                        </div>
+                        <Skeleton className='h-20 w-full'/>
+                      </div>
                     )}
 
                 

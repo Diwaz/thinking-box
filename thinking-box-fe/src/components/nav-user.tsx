@@ -1,12 +1,7 @@
 "use client"
 
 import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
   LogOut,
-  Sparkles,
 } from "lucide-react"
 
 import {
@@ -14,20 +9,11 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import { authClient } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
@@ -42,7 +28,6 @@ export function NavUser({
   }
 }) {
   const router = useRouter();
-  const { isMobile } = useSidebar()
 
   const handleSignOut = async()=>{
    await authClient.signOut({

@@ -49,11 +49,19 @@ export function AIInput({
 
 useEffect(()=>{
   // const {data:session} = useSession()
+  const preloginPrompt = sessionStorage.getItem('preloginPrompt');
+  if (preloginPrompt){
+    setValue(preloginPrompt);
+    sessionStorage.removeItem('preloginPrompt');
+  }
 },[])
 
   const handleLogin = async ()=>{
     // if (value.length > 0 ){
     // }
+if (value.length > 0){
+                  sessionStorage.setItem('preloginPrompt',value);
+                }
 await signIn.social({
 									provider: "google",
 									callbackURL: `${process.env.NEXT_PUBLIC_CALLBACK}`,
@@ -66,6 +74,7 @@ await signIn.social({
 										},
 									},
 								});
+                
   }
   const handleSubmit = async(type:string) =>{
     if (type === "initial"){
@@ -162,9 +171,29 @@ await signIn.social({
         role="group"
         aria-label="AI prompt composer"
       >
+
+        <form
+        onSubmit={(e)=>{
+          e.preventDefault();
+          if (value.trim() && userId){
+
+            handleSubmit(type);
+            return ;
+          }
+          handleLogin()
+        }}
+        >
+
         <Textarea
           value={value}
           onChange={(e) => setValue(e.target.value)}
+         onKeyDown={(e)=>{
+          if (e.key === "Enter" && !e.shiftKey){
+            e.preventDefault();
+            e.currentTarget.form?.requestSubmit();
+
+          }
+         }} 
           onInput={e => {
             const target = e.currentTarget;
             target.style.height = "auto";
@@ -174,10 +203,10 @@ await signIn.social({
           className="min-h-20 resize-none border-0  px-2 text-xs leading-6 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 md:min-h-24 md:text-base scrollbar"
           aria-label="Prompt"
           style={{ maxHeight: "240px", overflowY: "auto" }}
-        />
+          />
           {type === "secondary" ? (
-
-        <div className=" flex items-center justify-end gap-3">
+            
+            <div className=" flex items-center justify-end gap-3">
 
           <div className="flex items-center gap-2">
            
@@ -188,47 +217,47 @@ await signIn.social({
               disabled={value.length < 1 || loadingState}
               onClick={() => {
                 handleSubmit(type);
-                 }}
-            >
+              }}
+              >
               {loadingState ? (
-                  <Spinner/>
-                 )
-                : (
-
-                  <ArrowRight className="h-4 w-4" />
-                )
-                }
+                <Spinner/>
+              )
+              : (
+                
+                <ArrowRight className="h-4 w-4" />
+              )
+            }
             </Button>
           </div>
         </div>
           ):(
-
-        <div className=" flex items-center justify-between">
+            
+            <div className=" flex items-center justify-between">
 
               <div className="font-bold">
-                {value.length}
+                {value.trim().length}
                 <span className="text-muted-foreground font-light">/2000</span>
               </div>
           <div className="flex items-center gap-2">
             {userId ? (<Button
               type="button"
               className="h-9 p-2 rounded-lg bg-[#05001E] text-white hover:bg-[#05001E]/70 cursor-pointer "
-              disabled={value.length < 1 || Isloading || value.length > 2000}
+              disabled={value.trim().length < 1 || Isloading || value.length > 2000}
               aria-label="Send"
               onClick={() => {
                 handleSubmit(type);
-                 }}
-            >
+              }}
+              >
               <div>
               Generate
               </div>
                  {Isloading ? (
-                  <Spinner/>
-                 )
-                : (
-
-                  <ArrowRight className="h-4 w-4" />
-                )
+                   <Spinner/>
+                  )
+                  : (
+                    
+                    <ArrowRight className="h-4 w-4" />
+                  )
                 }
 
             </Button>):(<Button
@@ -238,18 +267,18 @@ await signIn.social({
               aria-label="Send"
               onClick={() => {
                 handleLogin();
-                 }}
-            >
+              }}
+              >
               <div>
               Login
               </div>
                  {Isloading ? (
-                  <Spinner/>
-                 )
-                : (
-
-                  <ArrowRight className="h-4 w-4" />
-                )
+                   <Spinner/>
+                  )
+                  : (
+                    
+                    <ArrowRight className="h-4 w-4" />
+                  )
                 }
 
             </Button>)}
@@ -257,7 +286,8 @@ await signIn.social({
           </div>
         </div>
           )}
-
+          </form>
+{/* form ending */}
       </div>
 
       {/* <p className="mt-3 text-xs text-muted-foreground">Design-only UI. Functionality coming soon.</p> */}
